@@ -1,0 +1,217 @@
+@import 'tailwindcss';
+
+/* Fuentes variables, subconjunto latino, servidas desde /fonts (se precargan en index.html). */
+@font-face {
+  font-family: 'Plus Jakarta Sans Variable';
+  src: url('/fonts/plus-jakarta-sans.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display Variable';
+  src: url('/fonts/playfair-display.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display Variable';
+  src: url('/fonts/playfair-display-italic.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Tokens de marca: gris perla + negro y dorado del logo. Tema único claro. */
+:root {
+  --bg: #e6e7ea; /* gris perla */
+  --surface: #f9f9fa;
+  --surface-2: #dcdde1;
+  --ink: #131315;
+  --muted: #55555e;
+  --line: #cfd0d6;
+  --gold: #c8a04a;
+  --gold-ink: #6b5112; /* dorado legible como texto sobre el gris */
+  --header-h: 88px; /* barra flotante (64px) + separación */
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Playfair Display Variable', ui-serif, Georgia, serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-on-gold: #131315;
+  --color-panel: #141416;
+  --color-on-panel: #f4f4f2;
+  --color-on-panel-muted: #b4b4bb;
+  --color-stage: #f1f1f3; /* fondo de las fotos de producto */
+  --ease-out-soft: cubic-bezier(0.32, 0.72, 0, 1);
+  --shadow-card: 0 1px 2px rgb(19 19 21 / 0.04), 0 18px 40px -24px rgb(19 19 21 / 0.22);
+  --shadow-card-hover: 0 1px 2px rgb(19 19 21 / 0.05), 0 32px 56px -28px rgb(19 19 21 / 0.34);
+}
+
+/* Capas: botón de WhatsApp 30, header 40, carrito 50 */
+
+html {
+  scroll-padding-top: calc(var(--header-h) + 8px);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--gold);
+  color: #131315;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-ink);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem];
+  }
+
+  /* Botones: píldora. Si llevan flecha, va dentro de su propio círculo (.btn-chip). */
+  .btn {
+    @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2.5 rounded-full px-6 text-[15px] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-300 ease-out-soft active:scale-[0.97];
+  }
+  .btn-primary {
+    @apply bg-ink text-surface shadow-[0_10px_24px_-12px_rgb(19_19_21/0.55)] hover:bg-black;
+  }
+  .btn-outline {
+    @apply bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40;
+  }
+  .btn-light {
+    @apply bg-on-panel text-ink hover:bg-white;
+  }
+  .btn-chip {
+    @apply -mr-3.5 grid size-8 place-items-center rounded-full bg-gold text-on-gold transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5;
+  }
+
+  .section {
+    @apply py-16 md:py-28;
+  }
+  .section-title {
+    @apply font-display text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-5xl;
+  }
+  .section-lead {
+    @apply mt-4 max-w-[56ch] text-base leading-relaxed text-muted sm:text-lg;
+  }
+
+  /* Tarjeta con doble marco: bandeja exterior + núcleo interior concéntrico. */
+  .card-shell {
+    @apply rounded-[1.75rem] bg-surface p-2 shadow-card ring-1 ring-black/5;
+  }
+  .card-core {
+    @apply overflow-hidden rounded-[1.25rem];
+  }
+
+  .field-input {
+    @apply min-h-12 w-full rounded-xl bg-surface px-3.5 text-base text-ink ring-1 ring-black/10 transition-shadow duration-200 placeholder:text-muted focus:ring-2 focus:ring-gold-ink focus:outline-none;
+  }
+
+  /* Foto de estudio (fondo blanco): se funde con el recuadro. */
+  .img-studio {
+    @apply object-contain mix-blend-multiply;
+  }
+}
+
+/* Aparición al hacer scroll: solo si el usuario no pidió menos movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s var(--ease-out-soft),
+      transform 0.9s var(--ease-out-soft);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Entrada del inicio: solo desplazamiento, así el contenido principal se
+     pinta de inmediato (no retrasa la carga percibida). */
+  @keyframes hero-in {
+    from {
+      transform: translateY(22px);
+    }
+  }
+  .hero-in {
+    animation: hero-in 0.9s var(--ease-out-soft) backwards;
+  }
+
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+  .page-in {
+    animation: page-in 0.6s var(--ease-out-soft) both;
+  }
+
+  /* Entrada de la cabecera al cargar la página */
+  @keyframes header-in {
+    from {
+      opacity: 0;
+      translate: 0 -24px;
+    }
+  }
+  .header-in {
+    animation: header-in 0.9s var(--ease-out-soft) 0.1s backwards;
+  }
+
+  /* Entrada del botón flotante de WhatsApp */
+  @keyframes fab-in {
+    from {
+      opacity: 0;
+      scale: 0.6;
+    }
+  }
+  .fab-in {
+    animation: fab-in 0.6s var(--ease-out-soft) 0.8s backwards;
+  }
+
+  @keyframes badge-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .badge-pop {
+    animation: badge-pop 0.35s var(--ease-out-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
