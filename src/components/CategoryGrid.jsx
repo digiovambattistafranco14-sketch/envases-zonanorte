@@ -18,13 +18,13 @@ function CategoryOption({ option, active, onSelect }) {
       type="button"
       onClick={() => onSelect(option.id)}
       aria-pressed={active}
-      className={`group flex min-w-0 shrink-0 cursor-pointer items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-left transition-all duration-300 ease-out-soft ${
+      className={`group flex min-w-0 shrink-0 cursor-pointer items-center gap-3 rounded-full py-2 pr-5 pl-2 text-left transition-all duration-300 ease-out-soft ${
         active
           ? 'bg-panel text-on-panel shadow-[0_12px_24px_-14px_rgb(17_17_19/0.7)] ring-1 ring-gold'
           : 'bg-[#f3f4f6] text-ink ring-1 ring-black/[0.06] hover:ring-black/25'
       }`}
     >
-      <span className={`size-10 shrink-0 overflow-hidden rounded-full bg-white ring-1 ${active ? 'ring-gold/60' : 'ring-black/5'}`}>
+      <span className={`size-12 shrink-0 overflow-hidden rounded-full sm:size-14 bg-white ring-1 ${active ? 'ring-gold/60' : 'ring-black/5'}`}>
         <img
           src={`/img/galeria/${option.image}.webp`}
           alt=""
@@ -34,8 +34,8 @@ function CategoryOption({ option, active, onSelect }) {
         />
       </span>
       <span className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate text-[14px] font-semibold">{option.short ?? option.label}</span>
-        <span className={`text-[12px] ${active ? 'text-gold-light' : 'text-muted'}`}>{plural(countFor(option.id))}</span>
+        <span className="truncate text-[16px] font-semibold sm:text-[18px]">{option.short ?? option.label}</span>
+        <span className={`text-[13px] sm:text-[14px] ${active ? 'text-gold-light' : 'text-muted'}`}>{plural(countFor(option.id))}</span>
       </span>
     </button>
   )
@@ -52,13 +52,13 @@ export default function CategoryGrid() {
       <div className="container-page">
         <SectionHeading eyebrow="Nuestros rubros" title="Elegí tu" accent="rubro" />
 
-        <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-2.5 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
+        <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-3 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
           {OPTIONS.map((option) => (
             <CategoryOption key={option.id} option={option} active={option.id === current} onSelect={setCatalogCategory} />
           ))}
         </div>
 
-        <p aria-live="polite" className="mt-8 text-[15px] text-muted">
+        <p aria-live="polite" className="mt-10 text-[17px] text-muted sm:text-[19px]">
           <span className="font-semibold text-ink">{label}</span> · {plural(visible.length)}
         </p>
 

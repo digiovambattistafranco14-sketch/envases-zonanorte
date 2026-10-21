@@ -5,12 +5,55 @@ import { useCart } from '../context/CartContext.jsx'
 import { categories } from '../data/products.js'
 import { useActiveSection } from '../hooks/useActiveSection.js'
 import { useHeaderVisibility } from '../hooks/useHeaderVisibility.js'
-import { setCatalogCategory } from '../lib/catalogFilter.js'
+import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilter.js'
 import { useRoute } from '../lib/router.js'
 import { contactUrl } from '../lib/whatsapp.js'
 import LogoSeal from './LogoSeal.jsx'
+import { WhatsAppGlyph } from './WhatsAppButton.jsx'
 
 const NAV_HREFS = navLinks.map((link) => link.href)
+
+// Rubros en la barra (como pidió el cliente): 3 a la izquierda del logo y el
+// resto a la derecha. Tocar uno lo elige en "Elegí tu rubro" y baja hasta ahí.
+const LEFT_CATEGORIES = categories.slice(0, 3)
+const RIGHT_CATEGORIES = categories.slice(3)
+
+function HeaderCategory({ category, active }) {
+  return (
+    <a
+      href="#rubros"
+      onClick={() => setCatalogCategory(category.id)}
+      aria-current={active ? 'true' : undefined}
+      className={`relative px-2.5 py-2 text-[14px] font-semibold tracking-[0.08em] whitespace-nowrap uppercase transition-colors duration-300 2xl:px-3.5 2xl:text-[15px] ${
+        active ? 'text-gold-light' : 'text-on-panel/85 hover:text-gold-light'
+      }`}
+    >
+      {category.short ?? category.label}
+      <span
+        aria-hidden="true"
+        className={`absolute inset-x-2.5 -bottom-0.5 h-[2px] origin-left bg-gold transition-transform duration-500 ease-out-soft 2xl:inset-x-3.5 ${
+          active ? 'scale-x-100' : 'scale-x-0'
+        }`}
+      />
+    </a>
+  )
+}
+
+// Botón verde de WhatsApp de la barra.
+function WhatsAppHeaderButton() {
+  return (
+    <a
+      href={contactUrl()}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Hablar por WhatsApp"
+      title="Hablar por WhatsApp"
+      className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25d366] shadow-[0_6px_16px_-6px_rgb(37_211_102/0.7)] transition-transform duration-300 ease-out-soft hover:scale-110 active:scale-95 sm:size-11"
+    >
+      <WhatsAppGlyph className="size-6 sm:size-[1.6rem]" />
+    </a>
+  )
+}
 
 function CartButton() {
   const { count, openCart } = useCart()
@@ -53,7 +96,7 @@ function MenuToggle({ open, onClick }) {
       aria-expanded={open}
       aria-controls="menu-movil"
       aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-      className="relative grid size-11 cursor-pointer place-items-center lg:hidden"
+      className="relative grid size-11 cursor-pointer place-items-center xl:hidden"
     >
       <span className={`${line} ${open ? 'rotate-45' : '-translate-y-[5px]'}`} />
       <span className={`${line} ${open ? '-rotate-45' : 'translate-y-[5px]'}`} />
@@ -61,8 +104,9 @@ function MenuToggle({ open, onClick }) {
   )
 }
 
-// Cabecera: bloque negro flotante con borde dorado. Menú a la izquierda,
-// logo rectangular al centro, WhatsApp y carrito a la derecha.
+// Cabecera: bloque negro flotante con borde dorado. En escritorio grande:
+// RUBROS y tres rubros a la izquierda, el sello al centro, el resto de los
+// rubros, WhatsApp y carrito a la derecha. En pantallas chicas, menú.
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -73,6 +117,8 @@ export default function Header() {
   const activeSection = useActiveSection(NAV_HREFS, onHome)
   // Fuera del inicio (rubros y productos) la sección activa es Rubros.
   const active = onHome ? activeSection : '#rubros'
+  const selectedCategory = useCatalogCategory()
+  const isActiveCategory = (id) => onHome && selectedCategory !== ALL && selectedCategory === id
 
   // Cerrar el menú móvil con Escape.
   useEffect(() => {
@@ -97,28 +143,19 @@ export default function Header() {
           scrolled ? 'shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)]' : ''
         }`}
       >
-      <div className="grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 sm:h-[4.75rem] sm:px-6 lg:px-8">
+      <div className="grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 sm:h-[4.75rem] sm:px-6 lg:px-8 xl:gap-6">
         <div className="flex items-center">
           <MenuToggle open={menuOpen} onClick={() => setMenuOpen((open) => !open)} />
-          <nav aria-label="Principal" className="hidden lg:block">
-            <ul className="flex items-center gap-1">
-              {navLinks.map((link) => {
-                const current = link.href === active
-                return (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      aria-current={current ? 'true' : undefined}
-                      className={`px-3 py-2 text-[12px] font-semibold tracking-[0.16em] uppercase transition-colors duration-300 xl:px-4 ${
-                        current ? 'text-gold-light' : 'text-on-panel/75 hover:text-on-panel'
-                      }`}
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                )
-              })}
-            </ul>
+          <nav aria-label="Rubros" className="hidden w-full items-center justify-between gap-2 xl:flex">
+            <span className="flex items-center gap-2.5 text-[12px] font-bold tracking-[0.28em] text-gold-light uppercase">
+              <span aria-hidden="true" className="h-px w-6 bg-gold" />
+              Rubros
+            </span>
+            <span className="flex items-center">
+              {LEFT_CATEGORIES.map((category) => (
+                <HeaderCategory key={category.id} category={category} active={isActiveCategory(category.id)} />
+              ))}
+            </span>
           </nav>
         </div>
 
@@ -137,17 +174,16 @@ export default function Header() {
           />
         </a>
 
-        <div className="flex items-center justify-end gap-1">
-          <a
-            href={contactUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Hablar por WhatsApp"
-            className="hidden size-11 place-items-center text-on-panel transition-colors duration-300 hover:text-gold-light sm:grid"
-          >
-            <WhatsappLogo size={23} />
-          </a>
-          <CartButton />
+        <div className="flex items-center justify-end gap-2 xl:justify-between">
+          <nav aria-label="Más rubros" className="hidden items-center xl:flex">
+            {RIGHT_CATEGORIES.map((category) => (
+              <HeaderCategory key={category.id} category={category} active={isActiveCategory(category.id)} />
+            ))}
+          </nav>
+          <span className="flex items-center gap-2">
+            <WhatsAppHeaderButton />
+            <CartButton />
+          </span>
         </div>
       </div>
 
@@ -155,7 +191,7 @@ export default function Header() {
         id="menu-movil"
         aria-label="Principal"
         inert={!menuOpen}
-        className={`absolute inset-x-0 top-full mt-2 origin-top rounded-[1.25rem] bg-panel/98 px-5 pt-2 pb-5 ring-1 ring-gold/40 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-out-soft lg:hidden ${
+        className={`absolute inset-x-0 top-full mt-2 origin-top rounded-[1.25rem] bg-panel/98 px-5 pt-2 pb-5 ring-1 ring-gold/40 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-out-soft xl:hidden ${
           menuOpen ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'
         }`}
       >

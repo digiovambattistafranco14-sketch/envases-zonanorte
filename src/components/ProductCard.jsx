@@ -29,19 +29,19 @@ export default function ProductCard({ product }) {
       </a>
 
       <div className="flex flex-1 flex-col px-3 pt-4 pb-3 sm:px-5 sm:pt-5 sm:pb-5">
-        <p className="text-[10px] font-bold tracking-[0.18em] text-gold-ink uppercase sm:text-[11px]">{getCategoryLabel(product.category)}</p>
-        <h3 className="mt-1.5 text-[14px] leading-snug font-semibold sm:mt-2 sm:text-[16px]">
+        <p className="text-[11px] font-bold tracking-[0.16em] text-gold-ink uppercase sm:text-[13px]">{getCategoryLabel(product.category)}</p>
+        <h3 className="mt-1.5 text-[16px] leading-snug font-semibold sm:mt-2 sm:text-[19px]">
           <a href={href} className="outline-offset-4">
             {product.name}
           </a>
         </h3>
 
         <div className="mt-auto pt-3 sm:pt-5">
-          <p className="text-[13px] text-muted sm:text-sm">{formatPrice(price)}</p>
+          <p className="text-[14px] text-muted sm:text-[16px]">{formatPrice(price)}</p>
           {hasVariants ? (
             <a
               href={href}
-              className="btn btn-primary group mt-2.5 w-full max-sm:min-h-11 max-sm:px-2 max-sm:text-[11px] max-sm:tracking-[0.06em] sm:mt-3 sm:justify-between sm:pl-6"
+              className="btn btn-primary group mt-2.5 w-full max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] max-sm:tracking-[0.05em] sm:mt-3 sm:justify-between sm:pl-6 sm:text-[14px]"
             >
               Elegir tamaño
               <span className="btn-chip max-sm:hidden">
@@ -55,7 +55,7 @@ export default function ProductCard({ product }) {
                 type="button"
                 onClick={add}
                 aria-label={`Agregar ${product.name} al carrito`}
-                className="btn btn-primary min-w-0 flex-1 px-4 max-sm:min-h-11 max-sm:px-2 max-sm:text-[11px] max-sm:tracking-[0.06em]"
+                className="btn btn-primary min-w-0 flex-1 px-4 max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] max-sm:tracking-[0.05em] sm:text-[14px]"
               >
                 {added ? <Check size={16} weight="bold" /> : <Plus size={16} weight="bold" />}
                 <span aria-live="polite">{added ? 'Agregado' : 'Agregar'}</span>
