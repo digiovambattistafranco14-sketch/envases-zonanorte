@@ -183,10 +183,10 @@ export default function CartDrawer() {
             </span>
             <p className="mt-5 text-lg font-semibold">Tu carrito está vacío</p>
             <p className="mt-2 max-w-[32ch] text-muted">
-              Sumá productos desde el catálogo para armar tu pedido.
+              Elegí un rubro y sumá productos para armar tu pedido.
             </p>
-            <a href="#catalogo" onClick={closeCart} className="btn btn-primary mt-6">
-              Ver catálogo
+            <a href="#rubros" onClick={closeCart} className="btn btn-primary mt-6">
+              Ver rubros
             </a>
           </div>
         ) : (

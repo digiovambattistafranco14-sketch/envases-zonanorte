@@ -7,30 +7,18 @@ export const site = {
     number: '5491168449701', // formato internacional sin "+" ni espacios
     display: '+54 9 11 6844-9701',
   },
+  // Mail de consultas. Dejar vacío para ocultarlo (las consultas igual llegan por WhatsApp).
+  email: '',
   // Dejar vacío para ocultar el ícono en el footer.
   social: {
-    instagram: '',
+    instagram: 'https://www.instagram.com/envases_zona_norte1/',
     facebook: '',
   },
-  coverage: [
-    'Vicente López',
-    'San Isidro',
-    'San Fernando',
-    'Tigre',
-    'San Martín',
-    'Pilar',
-    'Escobar',
-    'Malvinas Argentinas',
-    'San Miguel',
-    'José C. Paz',
-  ],
-  mapEmbedUrl:
-    'https://www.google.com/maps?q=Zona+Norte,+Gran+Buenos+Aires,+Argentina&z=10&output=embed',
 }
 
 export const navLinks = [
   { href: '#inicio', label: 'Inicio' },
-  { href: '#catalogo', label: 'Catálogo' },
-  { href: '#beneficios', label: 'Beneficios' },
+  { href: '#rubros', label: 'Rubros' },
+  { href: '#consultas', label: 'Consultas' },
   { href: '#contacto', label: 'Contacto' },
 ]

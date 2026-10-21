@@ -18,7 +18,7 @@ export default function ProductOrderControls({ product, order }) {
               return (
                 <label
                   key={v.id}
-                  className={`inline-flex min-h-11 cursor-pointer items-center rounded-full px-5 text-[15px] font-semibold transition-colors duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-gold-ink ${
+                  className={`inline-flex min-h-11 cursor-pointer items-center rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-gold-ink ${
                     active ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40'
                   }`}
                 >

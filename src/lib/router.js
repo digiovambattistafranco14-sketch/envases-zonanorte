@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 // Rutas por hash: funcionan en cualquier hosting estático sin configurar nada.
 //   #/producto/<id>  -> página de producto
-//   cualquier otra   -> inicio (los #catalogo, #contacto, etc. son anclas)
+//   cualquier otra   -> inicio (los #rubros, #contacto, etc. son anclas)
 const PRODUCT_PREFIX = '#/producto/'
 
 export const productHref = (id) => `${PRODUCT_PREFIX}${id}`

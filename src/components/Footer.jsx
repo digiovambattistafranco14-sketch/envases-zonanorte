@@ -1,102 +1,72 @@
 import { FacebookLogo, InstagramLogo, WhatsappLogo } from './icons.jsx'
-import { navLinks, site } from '../config/site.js'
+import { site } from '../config/site.js'
+import { categories } from '../data/products.js'
+import { setCatalogCategory } from '../lib/catalogFilter.js'
 import { contactUrl } from '../lib/whatsapp.js'
-import Logo from './Logo.jsx'
-import Reveal from './Reveal.jsx'
+import LogoSeal from './LogoSeal.jsx'
 
 const socials = [
   { key: 'instagram', label: 'Instagram', icon: InstagramLogo },
   { key: 'facebook', label: 'Facebook', icon: FacebookLogo },
 ].filter((s) => site.social[s.key])
 
+const linkClass = 'inline-flex min-h-9 items-center gap-2 transition-colors duration-300 hover:text-gold-light'
+
+// Pie negro y simple (en su propio panel): logo y contacto a la izquierda,
+// rubros a la derecha.
 export default function Footer() {
   return (
-    <footer id="contacto" className="bg-panel text-on-panel">
-      <div className="container-page py-20 md:py-24">
-        <Reveal className="flex flex-col gap-6 border-b border-white/10 pb-12 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="font-display text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-5xl">
-              ¿Buscás un envase que no ves acá?
-            </h2>
-            <p className="mt-3 max-w-[52ch] text-lg leading-relaxed text-on-panel-muted">
-              Escribinos con lo que necesitás y te decimos qué tenemos disponible.
-            </p>
-          </div>
-          <a
-            href={contactUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-light self-start md:self-auto"
-          >
-            <WhatsappLogo size={20} weight="bold" />
-            Hablar por WhatsApp
-          </a>
-        </Reveal>
+    <footer id="contacto" className="px-2 py-2 sm:px-4 sm:py-4">
+      <div className="relative mx-auto max-w-[110rem] overflow-hidden rounded-[1.5rem] bg-panel text-on-panel ring-1 ring-gold/40 sm:rounded-[2.25rem]">
 
-        <div className="grid gap-10 pt-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <Logo tone="panel" size={52} />
-            <p className="mt-5 max-w-[38ch] leading-relaxed text-on-panel-muted">
-              Envases, frascos y accesorios para cosmética y deco hogar. Venta por unidad y por
-              cantidad.
-            </p>
-          </div>
-
-          <nav aria-label="Secciones">
-            <h3 className="font-semibold">Secciones</h3>
-            <ul className="mt-3">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="inline-flex min-h-10 items-center text-on-panel-muted transition-colors hover:text-on-panel"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div>
-            <h3 className="font-semibold">Contacto</h3>
-            <ul className="mt-3 text-on-panel-muted">
+      <div className="container-page grid gap-12 py-16 md:grid-cols-[1fr_auto] md:items-start md:py-20">
+        <div>
+          <LogoSeal className="h-36 w-auto" sizes="136px" />
+          <ul className="mt-8 space-y-1 text-[15px] text-on-panel/75">
+            <li>
+              <a href={contactUrl()} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                <WhatsappLogo size={18} />
+                {site.whatsapp.display}
+              </a>
+            </li>
+            {site.email && (
               <li>
-                <a
-                  href={contactUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 transition-colors hover:text-on-panel"
-                >
-                  <WhatsappLogo size={18} />
-                  {site.whatsapp.display}
+                <a href={`mailto:${site.email}`} className={linkClass}>
+                  {site.email}
                 </a>
               </li>
-              <li className="flex min-h-10 items-center">Zona Norte, Buenos Aires</li>
-            </ul>
-            {socials.length > 0 && (
-              <ul className="mt-4 flex gap-2">
-                {socials.map(({ key, label, icon: Icon }) => (
-                  <li key={key}>
-                    <a
-                      href={site.social[key]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className="grid size-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-gold hover:text-gold"
-                    >
-                      <Icon size={20} />
-                    </a>
-                  </li>
-                ))}
-              </ul>
             )}
-          </div>
+            {socials.map(({ key, label, icon: Icon }) => (
+              <li key={key}>
+                <a href={site.social[key]} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                  <Icon size={18} />
+                  {label}
+                </a>
+              </li>
+            ))}
+            <li className="flex min-h-9 items-center">Zona Norte y GBA</li>
+          </ul>
         </div>
 
-        <p className="mt-12 text-sm text-on-panel-muted">
-          © {new Date().getFullYear()} {site.fullName}. Todos los derechos reservados.
+        <nav aria-label="Rubros">
+          <h3 className="text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Rubros</h3>
+          <ul className="mt-4 grid grid-cols-2 gap-x-12 text-[15px] text-on-panel/75">
+            {categories.map((category) => (
+              <li key={category.id}>
+                <a href="#rubros" onClick={() => setCatalogCategory(category.id)} className={linkClass}>
+                  {category.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <div className="border-t border-white/10">
+        <p className="container-page py-6 text-[13px] text-on-panel/50">
+          © {new Date().getFullYear()} {site.fullName}
         </p>
+      </div>
       </div>
     </footer>
   )

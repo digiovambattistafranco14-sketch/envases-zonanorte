@@ -26,14 +26,14 @@
 /* Tokens de marca: gris perla + negro y dorado del logo. Tema único claro. */
 :root {
   --bg: #e6e7ea; /* gris perla */
-  --surface: #f9f9fa;
+  --surface: #ffffff;
   --surface-2: #dcdde1;
   --ink: #131315;
   --muted: #55555e;
   --line: #cfd0d6;
   --gold: #c8a04a;
   --gold-ink: #6b5112; /* dorado legible como texto sobre el gris */
-  --header-h: 88px; /* barra flotante (64px) + separación */
+  --header-h: 88px; /* cabecera flotante (barra + margen) */
   color-scheme: light;
 }
 
@@ -48,11 +48,12 @@
   --color-line: var(--line);
   --color-gold: var(--gold);
   --color-gold-ink: var(--gold-ink);
+  --color-gold-light: #e6c97c; /* dorado legible sobre negro */
   --color-on-gold: #131315;
   --color-panel: #141416;
   --color-on-panel: #f4f4f2;
   --color-on-panel-muted: #b4b4bb;
-  --color-stage: #f1f1f3; /* fondo de las fotos de producto */
+  --color-stage: #ffffff; /* fondo de las fotos de producto */
   --ease-out-soft: cubic-bezier(0.32, 0.72, 0, 1);
   --shadow-card: 0 1px 2px rgb(19 19 21 / 0.04), 0 18px 40px -24px rgb(19 19 21 / 0.22);
   --shadow-card-hover: 0 1px 2px rgb(19 19 21 / 0.05), 0 32px 56px -28px rgb(19 19 21 / 0.34);
@@ -73,6 +74,42 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Grano sutil sobre toda la página: saca la sensación de fondo plano.
+   Capa fija y sin eventos, así no se repinta al hacer scroll. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Fondo con brillo dorado suave (secciones claras) */
+.glow-light {
+  background:
+    radial-gradient(60rem 30rem at 85% 0%, rgb(200 160 74 / 0.1), transparent 60%),
+    radial-gradient(50rem 30rem at 0% 100%, rgb(255 255 255 / 0.55), transparent 60%),
+    var(--bg);
+}
+/* Fondo negro con brillo dorado (secciones oscuras) */
+.glow-dark {
+  background:
+    radial-gradient(50rem 26rem at 15% 0%, rgb(200 160 74 / 0.16), transparent 62%),
+    radial-gradient(40rem 24rem at 100% 100%, rgb(200 160 74 / 0.08), transparent 60%),
+    #111113;
+}
+/* Número con contorno dorado que se rellena al pasar el mouse */
+.numeral-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--gold);
+  transition: color 0.6s var(--ease-out-soft);
+}
+.group:hover .numeral-outline {
+  color: var(--gold);
+}
+
 ::selection {
   background: var(--gold);
   color: #131315;
@@ -88,49 +125,87 @@ body {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem];
   }
 
-  /* Botones: píldora. Si llevan flecha, va dentro de su propio círculo (.btn-chip). */
+  /* Botones con esquinas redondeadas, texto en mayúsculas (estilo tienda). */
   .btn {
-    @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2.5 rounded-full px-6 text-[15px] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-300 ease-out-soft active:scale-[0.97];
+    @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl px-7 text-[13px] font-bold tracking-[0.12em] whitespace-nowrap uppercase transition-[background-color,border-color,color,box-shadow,transform] duration-300 ease-out-soft active:scale-[0.98];
   }
   .btn-primary {
-    @apply bg-ink text-surface shadow-[0_10px_24px_-12px_rgb(19_19_21/0.55)] hover:bg-black;
+    @apply bg-ink text-surface hover:bg-black;
   }
   .btn-outline {
-    @apply bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40;
+    @apply bg-transparent text-ink ring-1 ring-ink hover:bg-ink hover:text-surface;
+  }
+  .btn-gold {
+    @apply bg-gold text-on-gold hover:brightness-110;
+  }
+  .btn-ghost-light {
+    @apply text-on-panel ring-1 ring-white/45 hover:bg-white hover:text-ink;
   }
   .btn-light {
     @apply bg-on-panel text-ink hover:bg-white;
   }
+  /* Flecha del botón: se corre un poco al pasar el mouse. */
   .btn-chip {
-    @apply -mr-3.5 grid size-8 place-items-center rounded-full bg-gold text-on-gold transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5;
+    @apply grid place-items-center transition-transform duration-500 ease-out-soft group-hover:translate-x-1;
   }
 
   .section {
-    @apply py-16 md:py-28;
+    @apply pt-20 pb-24 md:pt-28 md:pb-32;
   }
+  /* Título de sección con filete fino debajo (como las tiendas de referencia). */
   .section-title {
-    @apply font-display text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-5xl;
+    @apply font-display text-[2.4rem] leading-[1.04] font-medium tracking-[-0.02em] text-balance sm:text-5xl lg:text-[3.6rem];
+  }
+  .section-title em {
+    @apply text-gold-ink;
   }
   .section-lead {
-    @apply mt-4 max-w-[56ch] text-base leading-relaxed text-muted sm:text-lg;
+    @apply mt-3 max-w-[56ch] text-base leading-relaxed text-muted;
+  }
+  .eyebrow {
+    @apply text-[12px] font-bold tracking-[0.22em] text-gold-ink uppercase;
   }
 
-  /* Tarjeta con doble marco: bandeja exterior + núcleo interior concéntrico. */
+  /* Tarjeta: fondo blanco, borde fino, esquinas redondeadas. */
   .card-shell {
-    @apply rounded-[1.75rem] bg-surface p-2 shadow-card ring-1 ring-black/5;
+    @apply rounded-2xl bg-surface ring-1 ring-black/[0.06];
   }
   .card-core {
-    @apply overflow-hidden rounded-[1.25rem];
+    @apply overflow-hidden rounded-xl;
   }
 
   .field-input {
-    @apply min-h-12 w-full rounded-xl bg-surface px-3.5 text-base text-ink ring-1 ring-black/10 transition-shadow duration-200 placeholder:text-muted focus:ring-2 focus:ring-gold-ink focus:outline-none;
+    @apply min-h-12 w-full rounded-xl bg-white px-4 text-base text-ink ring-1 ring-black/10 transition-shadow duration-200 placeholder:text-muted focus:ring-2 focus:ring-gold-ink focus:outline-none;
   }
 
   /* Foto de estudio (fondo blanco): se funde con el recuadro. */
   .img-studio {
     @apply object-contain mix-blend-multiply;
   }
+}
+
+/* Borde dorado (franjas laterales de la portada y marco de los rubros) */
+.gold-edge {
+  background: linear-gradient(180deg, #f7e7ae, #c8a04a 45%, #8f6a22 75%, #ecd185);
+}
+.gold-edge-x {
+  background: linear-gradient(90deg, transparent, #c8a04a 20%, #f7e7ae 50%, #c8a04a 80%, transparent);
+}
+.gold-frame {
+  background: linear-gradient(160deg, #f7e7ae, #c8a04a 40%, #8f6a22 70%, #e7c977);
+}
+
+/* Fila sin barra de scroll visible (solapas en celular) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carrusel de fotos: bordes que se desvanecen */
+.marquee {
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 }
 
 /* Aparición al hacer scroll: solo si el usuario no pidió menos movimiento. */
@@ -191,6 +266,23 @@ body {
     animation: fab-in 0.6s var(--ease-out-soft) 0.8s backwards;
   }
 
+  /* Carrusel continuo (velocidad constante a propósito) */
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .marquee-track {
+    animation: marquee var(--marquee-duration, 60s) linear infinite;
+  }
+  .marquee-reverse {
+    animation-direction: reverse;
+  }
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+
   @keyframes badge-pop {
     0% {
       transform: scale(1);
@@ -208,6 +300,14 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Sin animación: el carrusel queda quieto y se desliza a mano */
+  .marquee {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .marquee::-webkit-scrollbar {
+    display: none;
+  }
   *,
   *::before,
   *::after {

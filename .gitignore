@@ -3,3 +3,7 @@ dist
 
 .vercel
 .env*
+.playwright-mcp
+
+# Material de referencia del cliente (no es parte de la web)
+video explicatio/

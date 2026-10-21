@@ -14,7 +14,7 @@ const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: r
 const anchorOffset = () =>
   -parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop || '0')
 
-// Clic en un ancla (#catalogo, #contacto...) cuya sección está visible: scroll
+// Clic en un ancla (#rubros, #contacto...) cuya sección está visible: scroll
 // suave hasta ella. Las rutas (#/producto/...) y las anclas de una página
 // oculta siguen su curso normal y las resuelve el router.
 function onAnchorClick(event) {
@@ -63,3 +63,4 @@ export function jumpTo(target) {
     window.scrollTo(0, top)
   }
 }
+

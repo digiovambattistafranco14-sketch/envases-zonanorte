@@ -10,7 +10,7 @@ export default function QuantityStepper({ value, onChange, label, size = 'md', s
     <div
       role="group"
       aria-label={label}
-      className={`shrink-0 items-center overflow-hidden rounded-full bg-surface ring-1 ring-black/10 ${box} ${
+      className={`shrink-0 items-center overflow-hidden rounded-xl bg-surface ring-1 ring-black/15 ${box} ${
         stretch ? 'flex justify-between sm:inline-flex' : 'inline-flex'
       }`}
     >

@@ -1,17 +1,14 @@
-import Benefits from '../components/Benefits.jsx'
-import Catalog from '../components/Catalog.jsx'
-import Coverage from '../components/Coverage.jsx'
+import CategoryGrid from '../components/CategoryGrid.jsx'
+import ContactForm from '../components/ContactForm.jsx'
 import Hero from '../components/Hero.jsx'
-import HowToOrder from '../components/HowToOrder.jsx'
 
+// Inicio simple: carrusel, rubros (con sus productos) y consultas.
 export default function Home() {
   return (
     <>
       <Hero />
-      <Catalog />
-      <Benefits />
-      <HowToOrder />
-      <Coverage />
+      <CategoryGrid />
+      <ContactForm />
     </>
   )
 }

@@ -2,20 +2,27 @@ import { ArrowLeft, ArrowRight } from '../components/icons.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import ProductOrderControls from '../components/ProductOrderControls.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import { getCategoryLabel, products } from '../data/products.js'
+import { getCategoryLabel, isInCategory, products } from '../data/products.js'
 import { useProductOrder } from '../hooks/useProductOrder.js'
+import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilter.js'
 import { productHref } from '../lib/router.js'
 
-function BackLink() {
+// Vuelve a "Elegí tu rubro". Si el rubro que estaba elegido incluye este
+// producto se mantiene; si no, se elige el rubro del producto.
+function BackLink({ product }) {
+  const selected = useCatalogCategory()
+  const keep = selected !== ALL && isInCategory(product, selected)
+  const target = keep ? selected : product.category
   return (
     <a
-      href="#catalogo"
+      href="#rubros"
+      onClick={() => setCatalogCategory(target)}
       className="group inline-flex min-h-11 items-center gap-2.5 text-[15px] font-semibold text-muted transition-colors duration-300 hover:text-ink"
     >
       <span className="grid size-8 place-items-center rounded-full bg-surface ring-1 ring-black/10 transition-transform duration-500 ease-out-soft group-hover:-translate-x-0.5">
         <ArrowLeft size={15} weight="bold" />
       </span>
-      Volver al catálogo
+      Volver a {getCategoryLabel(target)}
     </a>
   )
 }
@@ -24,7 +31,7 @@ function OtherProducts({ current }) {
   // Primero los de la misma categoría, después el resto.
   const others = products
     .filter((p) => p.id !== current.id)
-    .sort((a, b) => (b.category === current.category) - (a.category === current.category))
+    .sort((a, b) => isInCategory(b, current.category) - isInCategory(a, current.category))
     .slice(0, 4)
 
   return (
@@ -62,7 +69,7 @@ function ProductDetail({ product }) {
 
   return (
     <div className="page-in container-page pt-6 pb-16 md:pt-12 md:pb-28">
-      <BackLink />
+      <BackLink product={product} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-16">
         <div className="card-shell mx-auto w-full max-w-md lg:sticky lg:top-[calc(var(--header-h)+16px)] lg:max-w-none">
@@ -91,7 +98,7 @@ function ProductDetail({ product }) {
               {count > 0 && (
                 <button type="button" onClick={openCart} className="btn btn-outline group mt-3 w-full justify-between">
                   Ver mi pedido ({count})
-                  <span className="btn-chip bg-ink text-surface">
+                  <span className="btn-chip">
                     <ArrowRight size={15} weight="bold" />
                   </span>
                 </button>
@@ -128,8 +135,8 @@ export default function ProductPage({ product }) {
         <p className="mx-auto mt-4 max-w-[44ch] text-lg text-muted">
           Puede que ya no esté en el catálogo. Mirá los productos disponibles.
         </p>
-        <a href="#catalogo" className="btn btn-primary mt-8">
-          Ver catálogo
+        <a href="#rubros" className="btn btn-primary mt-8">
+          Ver rubros
         </a>
       </div>
     )
