@@ -1,5 +1,6 @@
 import { WhatsappLogo } from './icons.jsx'
-import { categories, isInCategory, products } from '../data/products.js'
+import { categories, isInCategory } from '../data/products.js'
+import { usePublishedProducts } from '../lib/catalog.js'
 import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilter.js'
 import { contactUrl } from '../lib/whatsapp.js'
 import Panel from './Panel.jsx'
@@ -8,11 +9,11 @@ import SectionHeading from './SectionHeading.jsx'
 
 const OPTIONS = [{ id: ALL, label: 'Todos', image: 'frascos-tapa-plastica' }, ...categories]
 
-const countFor = (id) => (id === ALL ? products.length : products.filter((p) => isInCategory(p, id)).length)
+const countIn = (products, id) => (id === ALL ? products.length : products.filter((p) => isInCategory(p, id)).length)
 const plural = (n) => `${n} ${n === 1 ? 'producto' : 'productos'}`
 
 // Opción del selector: miniatura redonda + nombre + cantidad.
-function CategoryOption({ option, active, onSelect }) {
+function CategoryOption({ option, active, count, onSelect }) {
   return (
     <button
       type="button"
@@ -35,7 +36,7 @@ function CategoryOption({ option, active, onSelect }) {
       </span>
       <span className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-[16px] font-semibold sm:text-[18px]">{option.short ?? option.label}</span>
-        <span className={`text-[13px] sm:text-[14px] ${active ? 'text-gold-light' : 'text-muted'}`}>{plural(countFor(option.id))}</span>
+        <span className={`text-[13px] sm:text-[14px] ${active ? 'text-gold-light' : 'text-muted'}`}>{plural(count)}</span>
       </span>
     </button>
   )
@@ -43,6 +44,7 @@ function CategoryOption({ option, active, onSelect }) {
 
 // "Elegí tu rubro": se elige una opción y los productos aparecen acá mismo.
 export default function CategoryGrid() {
+  const products = usePublishedProducts()
   const current = useCatalogCategory()
   const visible = current === ALL ? products : products.filter((p) => isInCategory(p, current))
   const label = current === ALL ? 'Todos los productos' : OPTIONS.find((o) => o.id === current)?.label
@@ -54,7 +56,13 @@ export default function CategoryGrid() {
 
         <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-3 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
           {OPTIONS.map((option) => (
-            <CategoryOption key={option.id} option={option} active={option.id === current} onSelect={setCatalogCategory} />
+            <CategoryOption
+              key={option.id}
+              option={option}
+              active={option.id === current}
+              count={countIn(products, option.id)}
+              onSelect={setCatalogCategory}
+            />
           ))}
         </div>
 

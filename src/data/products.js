@@ -1,5 +1,5 @@
-// Catálogo. Para sumar un producto: agregar un objeto a `products` y su foto
-// optimizada en public/img/productos/ (ver scripts/optimize-images.mjs).
+// Catálogo inicial de la web. Los productos se editan desde el panel de
+// administración (#/admin); este archivo es el punto de partida (ver lib/catalog.js).
 //
 // image: nombre base de la foto (sin tamaño ni extensión).
 // price: número en pesos, o null para mostrar "Precio a consultar".
@@ -245,7 +245,6 @@ export const products = [
   },
 ]
 
-export const getProduct = (id) => products.find((p) => p.id === id)
 export const getCategory = (id) => categories.find((c) => c.id === id)
 export const getCategoryLabel = (id) => getCategory(id)?.label ?? ''
 

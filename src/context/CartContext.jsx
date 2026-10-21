@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
-import { getProduct } from '../data/products.js'
+import { getProduct, useAllProducts } from '../lib/catalog.js'
 
 const STORAGE_KEY = 'efzn-cart-v1'
 export const MAX_QTY = 99999
@@ -45,6 +45,7 @@ function loadItems() {
 export function CartProvider({ children }) {
   const [items, dispatch] = useReducer(reducer, undefined, loadItems)
   const [isOpen, setIsOpen] = useState(false)
+  const catalog = useAllProducts() // si un producto se edita o se borra, el carrito se actualiza
   const openCart = useCallback(() => setIsOpen(true), [])
   const closeCart = useCallback(() => setIsOpen(false), [])
 
@@ -57,18 +58,19 @@ export function CartProvider({ children }) {
   }, [items])
 
   const value = useMemo(() => {
-    const lines = items.map((item) => {
-      const product = getProduct(item.productId)
+    const lines = items.flatMap((item) => {
+      const product = catalog.find((p) => p.id === item.productId)
+      if (!product) return []
       const variant = product.variants?.find((v) => v.id === item.variantId) ?? null
       const unitPrice = variant?.price ?? product.price ?? null
-      return {
+      return [{
         ...item,
         product,
         variant,
         name: variant ? `${product.name} ${variant.label}` : product.name,
         unitPrice,
         subtotal: unitPrice == null ? null : unitPrice * item.qty,
-      }
+      }]
     })
     const hasUnpriced = lines.some((l) => l.subtotal == null)
     return {
@@ -84,7 +86,7 @@ export function CartProvider({ children }) {
       removeItem: (key) => dispatch({ type: 'remove', key }),
       clearCart: () => dispatch({ type: 'clear' }),
     }
-  }, [items, isOpen, openCart, closeCart])
+  }, [items, catalog, isOpen, openCart, closeCart])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

@@ -9,7 +9,7 @@ export default function ProductOrderControls({ product, order }) {
 
   return (
     <div>
-      {product.variants && (
+      {product.variants?.length > 0 && (
         <fieldset className="mb-6">
           <legend className="text-sm font-semibold">Tamaño</legend>
           <div className="mt-3 flex flex-wrap gap-2">

@@ -2,7 +2,8 @@ import { ArrowLeft, ArrowRight } from '../components/icons.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import ProductOrderControls from '../components/ProductOrderControls.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import { getCategoryLabel, isInCategory, products } from '../data/products.js'
+import { getCategoryLabel, isInCategory } from '../data/products.js'
+import { usePublishedProducts } from '../lib/catalog.js'
 import { useProductOrder } from '../hooks/useProductOrder.js'
 import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilter.js'
 import { productHref } from '../lib/router.js'
@@ -28,6 +29,7 @@ function BackLink({ product }) {
 }
 
 function OtherProducts({ current }) {
+  const products = usePublishedProducts()
   // Primero los de la misma categoría, después el resto.
   const others = products
     .filter((p) => p.id !== current.id)
@@ -110,8 +112,8 @@ function ProductDetail({ product }) {
             <>
               <h2 className="mt-10 text-sm font-semibold">Características</h2>
               <dl className="mt-3 divide-y divide-black/10 border-y border-black/10">
-                {product.specs.map((spec) => (
-                  <div key={spec.label} className="flex justify-between gap-6 py-3.5">
+                {product.specs.map((spec, i) => (
+                  <div key={`${spec.label}-${i}`} className="flex justify-between gap-6 py-3.5">
                     <dt className="text-muted">{spec.label}</dt>
                     <dd className="text-right font-semibold">{spec.value}</dd>
                   </div>

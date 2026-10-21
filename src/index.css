@@ -315,3 +315,29 @@ body::after {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Panel de administración ---------- */
+.admin-dialog::backdrop {
+  background: rgb(17 17 19 / 0.55);
+  backdrop-filter: blur(3px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .admin-dialog[open] {
+    animation: dialog-in 0.35s var(--ease-out-soft);
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.97);
+    }
+  }
+  .toast-in {
+    animation: toast-in 0.45s var(--ease-out-soft);
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(-16px) scale(0.96);
+    }
+  }
+}
