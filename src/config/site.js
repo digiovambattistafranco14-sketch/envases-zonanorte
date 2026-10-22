@@ -12,7 +12,7 @@ export const site = {
   // Dejar vacío para ocultar el ícono en el footer.
   social: {
     instagram: 'https://www.instagram.com/envases_zona_norte1/',
-    facebook: '',
+    facebook: 'https://www.facebook.com/envaseszonanorte',
   },
 }
 
