@@ -91,7 +91,31 @@ drop policy if exists "Los administradores borran fotos" on storage.objects;
 create policy "Los administradores borran fotos" on storage.objects
   for delete to authenticated using (bucket_id = 'productos' and public.is_admin());
 
--- 5. Productos que ya tenía la web --------------------------------------------
+-- 5. Configuración de la web (por ahora, las fotos del carrusel) ---------------
+create table if not exists public.settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists settings_touch on public.settings;
+create trigger settings_touch before update on public.settings
+  for each row execute function public.touch_updated_at();
+
+alter table public.settings enable row level security;
+
+drop policy if exists "Cualquiera lee la configuración" on public.settings;
+create policy "Cualquiera lee la configuración" on public.settings
+  for select using (true);
+
+drop policy if exists "Los administradores cambian la configuración" on public.settings;
+create policy "Los administradores cambian la configuración" on public.settings
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+grant select on public.settings to anon, authenticated;
+grant insert, update, delete on public.settings to authenticated;
+
+-- 6. Productos que ya tenía la web --------------------------------------------
 insert into public.products
   (id, name, category, also_in, description, image, image_fit, price, variants, specs, published, sort_order)
 values
@@ -109,7 +133,7 @@ values
   ('vaso-cilindrico-vidrio', 'Vaso cilíndrico de vidrio', 'varios', array[]::text[], 'Vaso de vidrio cilíndrico en cuatro medidas, de 6 x 10 a 6 x 22.', 'vasos-cilindricos', 'cover', null, '[{"id":"6x10","label":"6 x 10","price":null},{"id":"6x15","label":"6 x 15","price":null},{"id":"6x20","label":"6 x 20","price":null},{"id":"6x22","label":"6 x 22","price":null}]'::jsonb, '[{"label":"Material","value":"Vidrio"},{"label":"Medidas","value":"6 x 10, 6 x 15, 6 x 20 y 6 x 22"}]'::jsonb, true, 11)
 on conflict (id) do nothing;
 
--- 6. El dueño como administrador ------------------------------------------------
+-- 7. El dueño como administrador ------------------------------------------------
 -- Marca como administradores a los usuarios que existan en Authentication > Users.
 insert into public.admins (user_id)
 select id from auth.users

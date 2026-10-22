@@ -221,11 +221,15 @@ function storagePath(image) {
 
 const photosOf = (product) => [product.image, ...product.gallery].filter(Boolean)
 
-// Borra de Storage las fotos que ya no usa ningún producto (las copias
-// comparten fotos con el original). Si falla no pasa nada: solo ocupan lugar.
-async function removeUnusedPhotos(urls) {
+// Otras partes de la web que también usan fotos del bucket (el carrusel).
+const otherPhotoUsers = new Set()
+export const addPhotoUser = (getUrls) => otherPhotoUsers.add(getUrls)
+
+// Borra de Storage las fotos que ya no usa nadie (las copias comparten fotos
+// con el original). Si falla no pasa nada: solo ocupan lugar.
+export async function removeUnusedPhotos(urls) {
   if (!hasSupabase) return
-  const inUse = new Set(products.flatMap(photosOf))
+  const inUse = new Set([...products.flatMap(photosOf), ...[...otherPhotoUsers].flatMap((getUrls) => getUrls())])
   const paths = urls.filter((url) => !inUse.has(url)).map(storagePath).filter(Boolean)
   if (!paths.length) return
   const supabase = await getSupabase()

@@ -23,6 +23,7 @@ const ICONS = [
   'eye-slash',
   'facebook-logo',
   'image',
+  'images',
   'info',
   'instagram-logo',
   'lock-simple',

@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react'
 //   #/admin          -> panel de administración (lista de productos)
 //   #/admin/nuevo    -> cargar un producto nuevo
 //   #/admin/editar/<id> -> editar un producto
+//   #/admin/carrusel -> fotos del carrusel de la portada
 //   cualquier otra   -> inicio (los #rubros, #contacto, etc. son anclas)
 const PRODUCT_PREFIX = '#/producto/'
 
@@ -13,6 +14,7 @@ export const adminHref = {
   list: '#/admin',
   create: '#/admin/nuevo',
   edit: (id) => `#/admin/editar/${encodeURIComponent(id)}`,
+  carousel: '#/admin/carrusel',
 }
 
 // Scroll y hash de la página que se está dejando. Se leen antes de avisar a
@@ -36,6 +38,7 @@ export function useRoute() {
   if (hash === '#/admin' || hash.startsWith('#/admin/')) {
     const [, , view = 'list', id] = hash.slice(1).split('/')
     if (view === 'nuevo') return { page: 'admin', view: 'create' }
+    if (view === 'carrusel') return { page: 'admin', view: 'carousel' }
     if (view === 'editar' && id) return { page: 'admin', view: 'edit', productId: decodeURIComponent(id) }
     return { page: 'admin', view: 'list' }
   }

@@ -17,7 +17,7 @@ const AdminApp = lazy(() => import('./pages/admin/AdminApp.jsx'))
 const HOME_TITLE = `${site.fullName} | Envases y frascos por unidad y por mayor`
 
 // Profundidad de cada página: inicio > producto; en el panel, lista > editor.
-const DEPTH = { home: 0, product: 1, list: 2, create: 3, edit: 3 }
+const DEPTH = { home: 0, product: 1, list: 2, carousel: 2, create: 3, edit: 3 }
 const depthOf = (route) => DEPTH[route.page === 'admin' ? route.view : route.page]
 function routeKey(route) {
   if (route.page === 'product') return `p:${route.productId}`

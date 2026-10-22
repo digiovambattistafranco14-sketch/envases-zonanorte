@@ -1,16 +1,32 @@
 import { useEffect, useState } from 'react'
-import { ArrowCounterClockwise, ArrowSquareOut, Info, Package, SignOut } from '../../components/icons.jsx'
+import { ArrowCounterClockwise, ArrowSquareOut, Images, Info, Package, SignOut } from '../../components/icons.jsx'
 import LogoSeal from '../../components/LogoSeal.jsx'
 import { site } from '../../config/site.js'
 import { signOut, useSession } from '../../lib/adminAuth.js'
 import { DEMO_MODE, loadAdminCatalog, resetCatalog } from '../../lib/catalog.js'
 import { adminHref } from '../../lib/router.js'
 import AdminLogin from './AdminLogin.jsx'
+import CarouselEditor from './CarouselEditor.jsx'
 import ProductEditor from './ProductEditor.jsx'
 import ProductList from './ProductList.jsx'
 import { ConfirmDialog, ToastProvider, useToast } from './ui.jsx'
 
-function TopBar({ email }) {
+function NavLink({ href, active, icon, children }) {
+  return (
+    <a
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-[14px] font-semibold transition-colors ${
+        active ? 'bg-white/15 text-white' : 'text-on-panel hover:bg-white/10'
+      }`}
+    >
+      {icon}
+      <span className="max-sm:hidden">{children}</span>
+    </a>
+  )
+}
+
+function TopBar({ email, view }) {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 rounded-2xl bg-panel pr-2 pl-3 text-on-panel shadow-[0_18px_40px_-24px_rgb(0_0_0/0.7)] sm:pr-3 sm:pl-4">
@@ -19,18 +35,18 @@ function TopBar({ email }) {
           <span className="min-w-0 leading-tight">
             <span className="block text-[11px] font-bold tracking-[0.2em] text-gold-light uppercase">Panel</span>
             <span className="block truncate text-[15px] font-semibold max-sm:hidden">{site.fullName}</span>
-            <span className="block truncate text-[15px] font-semibold sm:hidden">Productos</span>
+            <span className="block truncate text-[15px] font-semibold sm:hidden">Envases ZN</span>
           </span>
         </a>
 
         <nav className="ml-auto flex items-center gap-1">
-          <a
-            href={adminHref.list}
-            className="hidden min-h-10 items-center gap-2 rounded-xl px-3.5 text-[14px] font-semibold text-on-panel hover:bg-white/10 md:inline-flex"
-          >
-            <Package size={18} />
+          <NavLink href={adminHref.list} active={view !== 'carousel'} icon={<Package size={18} />}>
             Productos
-          </a>
+          </NavLink>
+          <NavLink href={adminHref.carousel} active={view === 'carousel'} icon={<Images size={18} />}>
+            Carrusel
+          </NavLink>
+          <span className="mx-1 h-6 w-px bg-white/15" />
           <a
             href="#inicio"
             target="_blank"
@@ -138,13 +154,14 @@ export default function AdminApp({ route }) {
   if (catalog.error && !ready) content = <p className="rounded-2xl bg-[#fdecec] px-5 py-4 font-medium text-[#a93226]">{catalog.error}</p>
   else if (!ready) content = <Loading>Cargando productos…</Loading>
   else if (route.view === 'list') content = <ProductList />
+  else if (route.view === 'carousel') content = <CarouselEditor />
   // key: al pasar de un producto a otro el formulario arranca de cero.
   else content = <ProductEditor key={route.productId ?? 'nuevo'} productId={route.productId} />
 
   return (
     <ToastProvider>
       <div className="min-h-dvh pb-16">
-        <TopBar email={session.email} />
+        <TopBar email={session.email} view={route.view} />
         <div className="px-3 sm:px-5">
           {DEMO_MODE && <DemoBanner />}
           <main className="mx-auto max-w-6xl pt-8 sm:pt-10">{content}</main>

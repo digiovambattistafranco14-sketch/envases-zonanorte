@@ -1,13 +1,28 @@
 import { ArrowRight } from './icons.jsx'
-import { galleryBottom, galleryTop } from '../data/gallery.js'
+import { useMemo } from 'react'
+import { useCarousel } from '../lib/carousel.js'
+import { usePublishedProducts } from '../lib/catalog.js'
 import PhotoMarquee from './PhotoMarquee.jsx'
 
-const photos = [...galleryTop, ...galleryBottom]
+// Fotos del carrusel con su texto alternativo. El clic lleva al producto solo
+// si sigue publicado.
+function useHeroPhotos() {
+  const carousel = useCarousel()
+  const products = usePublishedProducts()
+  return useMemo(() => {
+    const byId = new Map(products.map((p) => [p.id, p]))
+    return carousel.map(({ src, product }) => {
+      const linked = byId.get(product)
+      return { src, product: linked ? linked.id : null, alt: linked ? linked.name : 'Frascos y envases de Envases & Frascos Zona Norte' }
+    })
+  }, [carousel, products])
+}
 
 // Portada: el carrusel de frascos bien grande, de borde a borde, sobre la
 // franja negra con dorado a los costados. El logo ya está en la cabecera.
 // Debajo, una frase corta y un botón.
 export default function Hero() {
+  const photos = useHeroPhotos()
   return (
     <section id="inicio" className="relative isolate mt-2 overflow-hidden bg-panel text-on-panel sm:mt-4">
       <span aria-hidden="true" className="gold-edge absolute inset-y-0 left-0 z-10 w-1.5 sm:w-2" />
