@@ -21,6 +21,7 @@ const normalize = (p, i = 0) => ({
   specs: [],
   price: null,
   image: '',
+  gallery: [], // fotos extra (además de la principal), hasta 9
   imageFit: 'contain',
   description: '',
   sortOrder: i,
@@ -36,6 +37,7 @@ const fromRow = (r) =>
     alsoIn: r.also_in ?? [],
     description: r.description ?? '',
     image: r.image ?? '',
+    gallery: r.gallery ?? [],
     imageFit: r.image_fit ?? 'contain',
     price: r.price,
     variants: r.variants ?? [],
@@ -50,6 +52,7 @@ const toRow = (p) => ({
   also_in: p.alsoIn,
   description: p.description,
   image: p.image,
+  gallery: p.gallery,
   image_fit: p.imageFit,
   price: p.price,
   variants: p.variants,
@@ -150,6 +153,7 @@ const nextSortOrder = () => products.reduce((max, p) => Math.max(max, p.sortOrde
 
 // Guarda un producto (nuevo o existente) y lo deja en el lugar que le toca.
 async function store(product, position) {
+  const previous = getProduct(product.id)
   let saved = normalize(product)
   if (hasSupabase) {
     const supabase = await getSupabase()
@@ -160,6 +164,7 @@ async function store(product, position) {
   const exists = products.some((p) => p.id === saved.id)
   if (exists) commit(products.map((p) => (p.id === saved.id ? saved : p)))
   else commit([...products.slice(0, position), saved, ...products.slice(position)].sort(bySortOrder))
+  if (previous) removeUnusedPhotos(photosOf(previous))
   return saved
 }
 
@@ -189,11 +194,9 @@ export async function deleteProduct(id) {
     const supabase = await getSupabase()
     const { error } = await supabase.from('products').delete().eq('id', id)
     if (error) throw friendly(error)
-    // La foto ya no la usa nadie: se borra también (si falla, no pasa nada).
-    const photo = storagePath(product?.image)
-    if (photo) supabase.storage.from(PHOTOS_BUCKET).remove([photo]).catch(() => {})
   }
   commit(products.filter((p) => p.id !== id))
+  if (product) removeUnusedPhotos(photosOf(product))
 }
 
 export async function setPublished(id, value) {
@@ -214,6 +217,19 @@ function storagePath(image) {
   const marker = `/storage/v1/object/public/${PHOTOS_BUCKET}/`
   const index = image?.indexOf(marker) ?? -1
   return index === -1 ? null : decodeURIComponent(image.slice(index + marker.length))
+}
+
+const photosOf = (product) => [product.image, ...product.gallery].filter(Boolean)
+
+// Borra de Storage las fotos que ya no usa ningún producto (las copias
+// comparten fotos con el original). Si falla no pasa nada: solo ocupan lugar.
+async function removeUnusedPhotos(urls) {
+  if (!hasSupabase) return
+  const inUse = new Set(products.flatMap(photosOf))
+  const paths = urls.filter((url) => !inUse.has(url)).map(storagePath).filter(Boolean)
+  if (!paths.length) return
+  const supabase = await getSupabase()
+  supabase.storage.from(PHOTOS_BUCKET).remove(paths).catch(() => {})
 }
 
 const toBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))

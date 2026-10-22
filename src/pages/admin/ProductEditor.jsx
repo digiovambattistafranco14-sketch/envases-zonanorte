@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowSquareOut, Check, Image as ImageIcon, Plus, Trash, UploadSimple, X } from '../../components/icons.jsx'
+import { ArrowLeft, ArrowSquareOut, CaretLeft, CaretRight, Check, Plus, Star, Trash, UploadSimple, X } from '../../components/icons.jsx'
 import ProductCard from '../../components/ProductCard.jsx'
 import { productImageUrl } from '../../components/ProductImage.jsx'
 import { categories, getCategoryLabel } from '../../data/products.js'
@@ -22,6 +22,7 @@ const SPEC_EXAMPLES = {
 }
 const SPEC_SUGGESTIONS = Object.keys(SPEC_EXAMPLES)
 const DESCRIPTION_HINT = 300
+const MAX_PHOTOS = 10
 
 let rowCounter = 0
 const rowKey = () => `r${(rowCounter += 1)}`
@@ -37,7 +38,7 @@ function toDraft(product) {
       category: '',
       alsoIn: [],
       description: '',
-      image: '',
+      photos: [],
       imageFit: 'contain',
       multiSize: false,
       price: '',
@@ -59,7 +60,7 @@ function toDraft(product) {
     category: product.category,
     alsoIn: product.alsoIn,
     description: product.description,
-    image: product.image,
+    photos: [product.image, ...product.gallery].filter(Boolean),
     imageFit: product.imageFit,
     multiSize: hasVariants,
     price: product.price == null ? '' : String(product.price),
@@ -101,7 +102,8 @@ function toProduct(draft) {
     category: draft.category,
     alsoIn: draft.alsoIn.filter((c) => c !== draft.category),
     description: draft.description.trim(),
-    image: draft.image,
+    image: draft.photos[0] ?? '',
+    gallery: draft.photos.slice(1),
     imageFit: draft.imageFit,
     price: draft.multiSize ? null : toPrice(draft.price),
     variants,
@@ -119,142 +121,235 @@ function validate(draft) {
   return errors
 }
 
-/* ---------- 1. Foto ---------- */
+/* ---------- 1. Fotos ---------- */
 
-function PhotoPicker({ image, fit, onImage, onFit }) {
+const FIT_OPTIONS = [
+  { value: 'contain', title: 'Fondo blanco', text: 'Se ve el producto entero, sin recortar.' },
+  { value: 'cover', title: 'Foto ambientada', text: 'Ocupa todo el recuadro (puede recortar bordes).' },
+]
+
+const photoKey = (url, i) => `${i}-${url.slice(-24)}`
+
+// Botoncito redondo sobre las miniaturas.
+function ThumbButton({ label, onClick, disabled = false, danger = false, gold = false, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`grid size-7 cursor-pointer place-items-center rounded-full bg-white/90 text-ink shadow-sm transition-colors disabled:invisible ${
+        danger ? 'hover:bg-[#c0392b] hover:text-white' : gold ? 'hover:bg-gold' : 'hover:bg-white'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// Hasta 10 fotos por producto. La primera es la principal: la que se ve en la
+// tarjeta del catálogo. Todas aparecen en la página del producto.
+function PhotosPicker({ photos, fit, onPhotos, onFit }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [progress, setProgress] = useState(null) // { done, total } mientras sube
+  const [notice, setNotice] = useState('')
+  const room = MAX_PHOTOS - photos.length
+  const principal = photos[0]
+  const fitClass = fit === 'contain' ? 'img-studio p-[5%]' : 'object-cover'
 
-  const handleFile = async (file) => {
-    if (!file) return
-    setBusy(true)
-    setError('')
-    try {
-      const { url, fit: suggested } = await uploadImage(file)
-      onImage(url, suggested)
-    } catch (err) {
-      setError(err instanceof CatalogError ? err.message : 'No pudimos cargar esa foto.')
-    } finally {
-      setBusy(false)
+  const handleFiles = async (fileList) => {
+    const files = [...(fileList ?? [])].filter((file) => file.type.startsWith('image/'))
+    if (!files.length || progress) return
+    if (room <= 0) {
+      setNotice(`Ya tiene ${MAX_PHOTOS} fotos, que es el máximo. Quitá alguna para agregar otra.`)
+      return
     }
+    const batch = files.slice(0, room)
+    setNotice('')
+    setProgress({ done: 0, total: batch.length })
+    const added = []
+    let firstFit = null
+    let failed = 0
+    for (const file of batch) {
+      try {
+        const { url, fit: suggested } = await uploadImage(file)
+        added.push(url)
+        firstFit ??= suggested
+      } catch {
+        failed += 1
+      }
+      setProgress({ done: added.length + failed, total: batch.length })
+    }
+    setProgress(null)
+    // El tipo de foto se adivina con la primera foto del producto.
+    if (added.length) onPhotos([...photos, ...added], photos.length === 0 ? firstFit : null)
+    if (failed) setNotice(failed === 1 ? 'Una foto no se pudo cargar. Probá con JPG o PNG.' : `${failed} fotos no se pudieron cargar. Probá con JPG o PNG.`)
+    else if (files.length > batch.length) setNotice(`Se agregaron ${batch.length}: el máximo es ${MAX_PHOTOS} fotos por producto.`)
   }
 
+  const remove = (index) => onPhotos(photos.filter((_, i) => i !== index))
+  const makePrincipal = (index) => onPhotos([photos[index], ...photos.filter((_, i) => i !== index)])
+  const move = (index, step) => {
+    const next = [...photos]
+    ;[next[index], next[index + step]] = [next[index + step], next[index]]
+    onPhotos(next)
+  }
+  const openPicker = () => inputRef.current.click()
+
   return (
-    <div className="grid gap-5 sm:grid-cols-[minmax(0,15rem)_1fr] sm:items-start">
-      <div
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragging(true)
+    <div
+      onDragOver={(e) => {
+        e.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget) && setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDragging(false)
+        handleFiles(e.dataTransfer.files)
+      }}
+      className={`-m-2 rounded-2xl p-2 transition-colors duration-200 ${dragging ? 'bg-[#f6efdc] ring-2 ring-gold' : ''}`}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="sr-only"
+        tabIndex={-1}
+        onChange={(e) => {
+          handleFiles(e.target.files)
+          e.target.value = ''
         }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setDragging(false)
-          handleFile(e.dataTransfer.files?.[0])
-        }}
-        className={`relative mx-auto aspect-[4/5] w-full max-w-[15rem] overflow-hidden rounded-2xl transition-all duration-200 ${
-          image ? 'bg-white ring-1 ring-black/10' : 'border-2 border-dashed bg-[#f5f6f8]'
-        } ${dragging ? 'scale-[1.02] border-gold bg-[#f6efdc] ring-2 ring-gold' : 'border-[#c9cad1]'}`}
-      >
-        {image ? (
-          <img src={productImageUrl(image, 480)} alt="" className={`size-full ${fit === 'contain' ? 'img-studio p-[5%]' : 'object-cover'}`} />
-        ) : (
-          <button
-            type="button"
-            onClick={() => inputRef.current.click()}
-            className="flex size-full cursor-pointer flex-col items-center justify-center gap-3 px-5 text-center"
-          >
-            <span className="grid size-14 place-items-center rounded-full bg-white text-ink shadow-[0_6px_16px_-8px_rgb(0_0_0/0.3)]">
-              <UploadSimple size={26} />
-            </span>
-            <span className="text-[15px] font-semibold">Subir foto</span>
-            <span className="text-[13px] leading-snug text-muted">Tocá acá o arrastrá la foto</span>
-          </button>
-        )}
-        {busy && (
-          <div className="absolute inset-0 grid place-items-center bg-white/80 text-[14px] font-semibold">
-            <span className="flex items-center gap-2">
-              <span className="size-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-              Preparando foto…
-            </span>
-          </div>
-        )}
-      </div>
+      />
 
-      <div className="min-w-0 space-y-5">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          tabIndex={-1}
-          onChange={(e) => {
-            handleFile(e.target.files?.[0])
-            e.target.value = ''
-          }}
-        />
-        {image ? (
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => inputRef.current.click()} className="btn btn-outline min-h-11 px-5 text-[14px] tracking-normal normal-case">
-              <ImageIcon size={18} />
-              Cambiar foto
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,15rem)_1fr] sm:items-start">
+        {/* Foto principal */}
+        <div
+          className={`relative mx-auto aspect-[4/5] w-full max-w-[15rem] overflow-hidden rounded-2xl ${
+            principal ? 'bg-white ring-1 ring-black/10' : 'border-2 border-dashed border-[#c9cad1] bg-[#f5f6f8]'
+          }`}
+        >
+          {principal ? (
+            <>
+              <img src={productImageUrl(principal, 480)} alt="" className={`size-full ${fitClass}`} />
+              <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[12px] font-semibold text-white">
+                <Star size={12} weight="bold" />
+                Principal
+              </span>
+            </>
+          ) : (
+            <button type="button" onClick={openPicker} className="flex size-full cursor-pointer flex-col items-center justify-center gap-3 px-5 text-center">
+              <span className="grid size-14 place-items-center rounded-full bg-white text-ink shadow-[0_6px_16px_-8px_rgb(0_0_0/0.3)]">
+                <UploadSimple size={26} />
+              </span>
+              <span className="text-[15px] font-semibold">Subir fotos</span>
+              <span className="text-[13px] leading-snug text-muted">Tocá acá o arrastralas. Podés elegir varias a la vez.</span>
             </button>
-            <button
-              type="button"
-              onClick={() => onImage('', fit)}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-4 text-[14px] font-semibold text-muted hover:bg-[#fdecec] hover:text-[#c0392b]"
-            >
-              <Trash size={17} />
-              Quitar
-            </button>
-          </div>
-        ) : (
-          <p className="text-[14px] leading-relaxed text-muted">
-            Usá una foto clara del producto, idealmente vertical. Si no tenés una ahora, podés guardarlo igual y agregarla después.
-          </p>
-        )}
-        {error && <p className="text-[14px] font-medium text-[#c0392b]">{error}</p>}
+          )}
+          {progress && (
+            <div className="absolute inset-0 grid place-items-center bg-white/85 px-4 text-center text-[14px] font-semibold">
+              <span className="flex items-center gap-2">
+                <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                {progress.total > 1 ? `Subiendo ${Math.min(progress.done + 1, progress.total)} de ${progress.total}…` : 'Preparando foto…'}
+              </span>
+            </div>
+          )}
+        </div>
 
-        <div>
-          <p className="text-[15px] font-semibold">¿Qué tipo de foto es?</p>
-          <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
-            {[
-              {
-                value: 'contain',
-                title: 'Fondo blanco',
-                text: 'Se ve el producto entero, sin recortar.',
-              },
-              {
-                value: 'cover',
-                title: 'Foto ambientada',
-                text: 'Ocupa todo el recuadro (puede recortar bordes).',
-              },
-            ].map((option) => {
-              const active = fit === option.value
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => onFit(option.value)}
-                  className={`relative cursor-pointer rounded-xl p-3.5 text-left transition-all duration-200 ${
-                    active ? 'bg-[#fbf7ec] ring-2 ring-gold' : 'bg-[#f5f6f8] ring-1 ring-black/[0.06] hover:ring-black/20'
-                  }`}
-                >
-                  <span className="block text-[14px] font-semibold">{option.title}</span>
-                  <span className="mt-0.5 block text-[13px] leading-snug text-muted">{option.text}</span>
-                  {active && (
-                    <span className="absolute top-3 right-3 grid size-5 place-items-center rounded-full bg-gold text-on-gold">
-                      <Check size={12} weight="bold" />
-                    </span>
+        <div className="min-w-0 space-y-5">
+          {/* Todas las fotos, en orden */}
+          <div>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-[15px] font-semibold">Fotos del producto</p>
+              <span className={`text-[13px] tabular-nums ${room === 0 ? 'font-semibold text-gold-ink' : 'text-muted'}`}>
+                {photos.length} de {MAX_PHOTOS}
+              </span>
+            </div>
+            <ul className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+              {photos.map((url, i) => (
+                <li key={photoKey(url, i)} className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white ring-1 ring-black/10">
+                  <img src={productImageUrl(url, 480)} alt={`Foto ${i + 1}`} className={`size-full ${fitClass}`} />
+                  <span className="absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full bg-white/90 text-[12px] font-bold text-ink shadow-sm">
+                    {i === 0 ? <Star size={12} weight="bold" /> : i + 1}
+                  </span>
+                  <span className="absolute top-1.5 right-1.5">
+                    <ThumbButton label={`Quitar foto ${i + 1}`} danger onClick={() => remove(i)}>
+                      <X size={14} weight="bold" />
+                    </ThumbButton>
+                  </span>
+                  {photos.length > 1 && (
+                    <div className="absolute inset-x-1.5 bottom-1.5 flex items-center justify-between">
+                      <ThumbButton label={`Mover foto ${i + 1} antes`} disabled={i === 0} onClick={() => move(i, -1)}>
+                        <CaretLeft size={14} weight="bold" />
+                      </ThumbButton>
+                      {i > 0 && (
+                        <ThumbButton label={`Usar la foto ${i + 1} como principal`} gold onClick={() => makePrincipal(i)}>
+                          <Star size={14} weight="bold" />
+                        </ThumbButton>
+                      )}
+                      <ThumbButton label={`Mover foto ${i + 1} después`} disabled={i === photos.length - 1} onClick={() => move(i, 1)}>
+                        <CaretRight size={14} weight="bold" />
+                      </ThumbButton>
+                    </div>
                   )}
-                </button>
-              )
-            })}
+                </li>
+              ))}
+              {room > 0 && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={openPicker}
+                    disabled={Boolean(progress)}
+                    className="flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[#c9cad1] bg-[#f5f6f8] text-[13px] font-semibold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-wait"
+                  >
+                    <Plus size={20} weight="bold" />
+                    Agregar
+                  </button>
+                </li>
+              )}
+            </ul>
+            {notice ? (
+              <p className="mt-2 text-[13px] font-medium text-[#c0392b]">{notice}</p>
+            ) : (
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                {photos.length > 1
+                  ? 'La de la estrella es la principal (la que se ve en el catálogo). Con las flechas cambiás el orden.'
+                  : `Podés subir hasta ${MAX_PHOTOS} fotos: de frente, de costado, con la tapa, en uso… Si no tenés ahora, guardalo igual y agregalas después.`}
+              </p>
+            )}
           </div>
-          {image && <p className="mt-2 text-[13px] text-muted">Lo elegimos solos según la foto; cambialo si se ve mal en la vista previa.</p>}
+
+          <div>
+            <p className="text-[15px] font-semibold">¿Qué tipo de fotos son?</p>
+            <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+              {FIT_OPTIONS.map((option) => {
+                const active = fit === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onFit(option.value)}
+                    className={`relative cursor-pointer rounded-xl p-3.5 text-left transition-all duration-200 ${
+                      active ? 'bg-[#fbf7ec] ring-2 ring-gold' : 'bg-[#f5f6f8] ring-1 ring-black/[0.06] hover:ring-black/20'
+                    }`}
+                  >
+                    <span className="block text-[14px] font-semibold">{option.title}</span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-muted">{option.text}</span>
+                    {active && (
+                      <span className="absolute top-3 right-3 grid size-5 place-items-center rounded-full bg-gold text-on-gold">
+                        <Check size={12} weight="bold" />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {principal && <p className="mt-2 text-[13px] text-muted">Lo elegimos solos según la primera foto; cambialo si se ve mal en la vista previa.</p>}
+          </div>
         </div>
       </div>
     </div>
@@ -485,6 +580,18 @@ function Preview({ product }) {
 
       <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.06]">
         <p className="text-[12px] font-bold tracking-[0.16em] text-muted uppercase">En la página del producto</p>
+        {product.gallery.length > 0 && (
+          <div className="mt-3 flex gap-1.5">
+            {[product.image, ...product.gallery].map((url, i) => (
+              <img
+                key={`${i}-${url.slice(-24)}`}
+                src={productImageUrl(url, 480)}
+                alt=""
+                className={`size-9 rounded-lg bg-white object-cover ring-1 ${i === 0 ? 'ring-ink' : 'ring-black/10'}`}
+              />
+            ))}
+          </div>
+        )}
         <p className={`mt-2 line-clamp-4 text-[14px] leading-relaxed ${product.description ? 'text-ink' : 'text-muted italic'}`}>
           {product.description || 'Acá va la descripción.'}
         </p>
@@ -635,11 +742,11 @@ export default function ProductEditor({ productId }) {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-5">
-          <FormSection step={1} title="Foto" hint="La foto principal que se ve en la tarjeta y en la página del producto.">
-            <PhotoPicker
-              image={draft.image}
+          <FormSection step={1} title="Fotos" hint="Hasta 10 fotos. La principal se ve en el catálogo; en la página del producto se ven todas.">
+            <PhotosPicker
+              photos={draft.photos}
               fit={draft.imageFit}
-              onImage={(image, imageFit) => update({ image, imageFit })}
+              onPhotos={(photos, imageFit) => update(imageFit ? { photos, imageFit } : { photos })}
               onFit={(imageFit) => update({ imageFit })}
             />
           </FormSection>

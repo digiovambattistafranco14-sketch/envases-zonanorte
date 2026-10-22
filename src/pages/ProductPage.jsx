@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight } from '../components/icons.jsx'
+import { useState } from 'react'
+import { ArrowLeft, ArrowRight, CaretLeft, CaretRight } from '../components/icons.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import ProductOrderControls from '../components/ProductOrderControls.jsx'
 import { useCart } from '../context/CartContext.jsx'
@@ -65,6 +66,72 @@ function OtherProducts({ current }) {
   )
 }
 
+// Foto grande + miniaturas para pasar entre las fotos del producto.
+function ProductGallery({ product }) {
+  const photos = [product.image, ...(product.gallery ?? [])].filter(Boolean)
+  const [index, setIndex] = useState(0)
+  const current = photos[index] ?? product.image
+  const go = (step) => setIndex((i) => (i + step + photos.length) % photos.length)
+
+  return (
+    <div className="mx-auto w-full max-w-md lg:sticky lg:top-[calc(var(--header-h)+16px)] lg:max-w-none">
+      <div className="card-shell relative">
+        <div className="card-core aspect-[4/5] bg-stage">
+          <ProductImage
+            key={current}
+            product={{ ...product, image: current }}
+            alt={photos.length > 1 ? `${product.name}, foto ${index + 1} de ${photos.length}` : product.name}
+            sizes="(min-width: 1024px) 520px, 92vw"
+            lazy={false}
+            className="photo-in"
+          />
+        </div>
+        {photos.length > 1 && (
+          <>
+            {[
+              { step: -1, label: 'Foto anterior', side: 'left-3', Icon: CaretLeft },
+              { step: 1, label: 'Foto siguiente', side: 'right-3', Icon: CaretRight },
+            ].map(({ step, label, side, Icon }) => (
+              <button
+                key={step}
+                type="button"
+                onClick={() => go(step)}
+                aria-label={label}
+                className={`absolute top-1/2 ${side} grid size-11 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-white/90 text-ink shadow-[0_6px_18px_-8px_rgb(0_0_0/0.4)] ring-1 ring-black/5 transition-transform duration-300 ease-out-soft hover:scale-105`}
+              >
+                <Icon size={18} weight="bold" />
+              </button>
+            ))}
+            <span className="absolute right-3 bottom-3 rounded-full bg-ink/80 px-2.5 py-1 text-[12px] font-semibold text-white tabular-nums">
+              {index + 1} / {photos.length}
+            </span>
+          </>
+        )}
+      </div>
+
+      {photos.length > 1 && (
+        <ul className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+          {photos.map((url, i) => (
+            <li key={`${i}-${url.slice(-24)}`} className="shrink-0">
+              <button
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Ver foto ${i + 1}`}
+                aria-current={i === index}
+                className={`block size-16 cursor-pointer overflow-hidden rounded-xl bg-white transition-all duration-200 sm:size-[4.5rem] ${
+                  i === index ? 'ring-2 ring-ink' : 'opacity-70 ring-1 ring-black/10 hover:opacity-100'
+                }`}
+              >
+                <ProductImage product={{ ...product, image: url }} sizes="80px" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function ProductDetail({ product }) {
   const order = useProductOrder(product)
   const { count, openCart } = useCart()
@@ -74,16 +141,7 @@ function ProductDetail({ product }) {
       <BackLink product={product} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-16">
-        <div className="card-shell mx-auto w-full max-w-md lg:sticky lg:top-[calc(var(--header-h)+16px)] lg:max-w-none">
-          <div className="card-core aspect-[4/5] bg-stage">
-            <ProductImage
-              product={product}
-              alt={product.name}
-              sizes="(min-width: 1024px) 520px, 92vw"
-              lazy={false}
-            />
-          </div>
-        </div>
+        <ProductGallery product={product} />
 
         <div className="min-w-0 lg:max-w-xl lg:py-6">
           <p className="inline-flex rounded-full bg-surface px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.2em] text-gold-ink uppercase ring-1 ring-black/5">

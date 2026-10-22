@@ -11,6 +11,7 @@ create table if not exists public.products (
   also_in text[] not null default '{}',
   description text not null default '',
   image text not null default '',
+  gallery text[] not null default '{}', -- fotos extra (hasta 9 además de la principal)
   image_fit text not null default 'contain' check (image_fit in ('contain', 'cover')),
   price integer check (price >= 0),
   variants jsonb not null default '[]',
@@ -31,6 +32,11 @@ end $$;
 drop trigger if exists products_touch on public.products;
 create trigger products_touch before update on public.products
   for each row execute function public.touch_updated_at();
+
+-- Para bases creadas antes de que existiera la galería de fotos.
+alter table public.products add column if not exists gallery text[] not null default '{}';
+alter table public.products drop constraint if exists products_gallery_max;
+alter table public.products add constraint products_gallery_max check (coalesce(array_length(gallery, 1), 0) <= 9);
 
 -- 2. Administradores ---------------------------------------------------------
 -- Solo los usuarios de esta lista pueden cargar, editar o borrar productos.

@@ -341,3 +341,15 @@ body::after {
     }
   }
 }
+
+/* Cambio de foto en la galería del producto */
+@media (prefers-reduced-motion: no-preference) {
+  .photo-in {
+    animation: photo-in 0.45s var(--ease-out-soft);
+  }
+  @keyframes photo-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
