@@ -10,7 +10,7 @@ export const site = {
   // Mail de consultas. Dejar vacío para ocultarlo (las consultas igual llegan por WhatsApp).
   email: '',
   // Texto de envíos del footer (va debajo de "Realizamos envíos").
-  shipping: 'A Zona Norte, puntos de encuentro, Capital Federal y a todo el país (consultar).',
+  shipping: 'Zona Norte, puntos de encuentro, Capital Federal y a todo el país (consultar).',
   // Dejar vacío para ocultar el ícono en el footer.
   social: {
     instagram: 'https://www.instagram.com/envases_zona_norte1/',
