@@ -36,8 +36,9 @@ export default function Hero() {
 
       <div className="relative border-t border-gold/30">
         <div className="hero-in container-page flex flex-col items-center justify-between gap-5 py-7 text-center [animation-delay:120ms] sm:flex-row sm:text-left">
-          <p className="font-display text-[22px] leading-snug sm:text-[26px]">
-            Envases para cada rubro, <em className="text-gold-light">por mayor y por menor</em>
+          <p className="font-display text-[22px] leading-snug text-balance sm:text-[26px]">
+            Distribuimos todo tipo de Envases para diferentes rubros
+            <em className="mt-1 block text-[18px] text-gold-light sm:text-[21px]">Ventas por Mayor y Menor</em>
           </p>
           <div className="flex shrink-0 flex-wrap justify-center gap-3">
             <a href="#rubros" className="btn btn-gold group">
