@@ -42,6 +42,7 @@ const ICONS = [
   'caret-left',
   'star',
   'trash',
+  'truck',
   'upload-simple',
   'warning-circle',
   'whatsapp-logo',
