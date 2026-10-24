@@ -14,10 +14,11 @@ import { WhatsAppGlyph } from './WhatsAppButton.jsx'
 
 const NAV_HREFS = navLinks.map((link) => link.href)
 
-// Rubros en la barra (como pidió el cliente): 3 a la izquierda del logo y el
-// resto a la derecha. Tocar uno lo elige en "Elegí tu rubro" y baja hasta ahí.
-const LEFT_CATEGORIES = categories.slice(0, 3)
-const RIGHT_CATEGORIES = categories.slice(3)
+// Rubros en la barra (como pidió el cliente), repartidos a los dos lados del
+// logo: 4 a la izquierda y 3 a la derecha (que además tiene los botones), así
+// las dos mitades pesan parecido. Tocar uno lo elige en "Elegí tu rubro".
+const LEFT_CATEGORIES = categories.slice(0, 4)
+const RIGHT_CATEGORIES = categories.slice(4)
 
 function HeaderCategory({ category, active }) {
   return (
@@ -165,7 +166,8 @@ export default function Header() {
           scrolled ? 'shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)]' : ''
         }`}
       >
-      <div className="grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 sm:h-[4.75rem] sm:px-6 lg:px-8 xl:gap-6">
+      {/* minmax(0,1fr): las dos mitades miden siempre lo mismo y el logo queda en el centro exacto */}
+      <div className="grid h-[4.25rem] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-3 sm:h-[4.75rem] sm:px-6 lg:px-8 xl:gap-4 xl:px-7 min-[1400px]:gap-5 min-[1400px]:px-8">
         <div className="flex items-center">
           <MenuToggle open={menuOpen} onClick={() => setMenuOpen((open) => !open)} />
           <span className="xl:hidden">
@@ -205,7 +207,7 @@ export default function Header() {
               <HeaderCategory key={category.id} category={category} active={isActiveCategory(category.id)} />
             ))}
           </nav>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 xl:gap-1 min-[1400px]:gap-2">
             <span className="hidden xl:block">
               <SearchButton onClick={openSearch} />
             </span>
