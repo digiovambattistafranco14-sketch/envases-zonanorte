@@ -28,6 +28,7 @@ const ICONS = [
   'instagram-logo',
   'lock-simple',
   'magnifying-glass',
+  'magnifying-glass-plus',
   'map-pin',
   'minus',
   'package',

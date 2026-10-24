@@ -81,10 +81,10 @@ export default function ContactForm() {
         {/* Columna de imagen con los datos de contacto encima */}
         <Reveal className="relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden bg-panel p-8 text-on-panel sm:p-10 lg:min-h-[32rem]">
           <img
-            src="/img/galeria/ambiente-piano.webp"
+            src="/img/galeria/consultas-piano.webp"
             alt=""
             loading="lazy"
-            className="absolute inset-0 -z-10 size-full object-cover"
+            className="absolute inset-0 -z-10 size-full object-cover object-[68%_40%]"
           />
           <span aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-black/90 via-black/45 to-black/10" />
           <p className="flex items-center gap-3 eyebrow text-gold-light!">

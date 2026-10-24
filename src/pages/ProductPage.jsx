@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ArrowLeft, ArrowRight, CaretLeft, CaretRight } from '../components/icons.jsx'
+import { ArrowLeft, ArrowRight, CaretLeft, CaretRight, MagnifyingGlassPlus } from '../components/icons.jsx'
+import PhotoLightbox from '../components/PhotoLightbox.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import ProductOrderControls from '../components/ProductOrderControls.jsx'
 import { useCart } from '../context/CartContext.jsx'
@@ -70,22 +71,33 @@ function OtherProducts({ current }) {
 function ProductGallery({ product }) {
   const photos = [product.image, ...(product.gallery ?? [])].filter(Boolean)
   const [index, setIndex] = useState(0)
+  const [enlarged, setEnlarged] = useState(false)
   const current = photos[index] ?? product.image
   const go = (step) => setIndex((i) => (i + step + photos.length) % photos.length)
 
   return (
     <div className="mx-auto w-full max-w-md lg:sticky lg:top-[calc(var(--header-h)+16px)] lg:max-w-none">
-      <div className="card-shell relative">
-        <div className="card-core aspect-[4/5] bg-stage">
+      <div className="card-shell group relative">
+        {/* Tocar la foto la abre grande */}
+        <button
+          type="button"
+          onClick={() => setEnlarged(true)}
+          aria-label="Ver la foto en grande"
+          className="card-core block aspect-[4/5] w-full cursor-zoom-in bg-stage"
+        >
           <ProductImage
             key={current}
             product={{ ...product, image: current }}
             alt={photos.length > 1 ? `${product.name}, foto ${index + 1} de ${photos.length}` : product.name}
             sizes="(min-width: 1024px) 520px, 92vw"
             lazy={false}
-            className="photo-in"
+            className="photo-in transition-transform duration-700 ease-out-soft group-hover:scale-[1.04]"
           />
-        </div>
+          <span className="pointer-events-none absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[12px] font-semibold text-ink shadow-sm ring-1 ring-black/5 transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100">
+            <MagnifyingGlassPlus size={15} weight="bold" />
+            Ampliar
+          </span>
+        </button>
         {photos.length > 1 && (
           <>
             {[
@@ -108,6 +120,8 @@ function ProductGallery({ product }) {
           </>
         )}
       </div>
+
+      <PhotoLightbox photos={photos} index={index} onIndex={setIndex} open={enlarged} onClose={() => setEnlarged(false)} title={product.name} />
 
       {photos.length > 1 && (
         <ul className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">

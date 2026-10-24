@@ -124,8 +124,8 @@ function validate(draft) {
 /* ---------- 1. Fotos ---------- */
 
 const FIT_OPTIONS = [
-  { value: 'contain', title: 'Fondo blanco', text: 'Se ve el producto entero, sin recortar.' },
-  { value: 'cover', title: 'Foto ambientada', text: 'Ocupa todo el recuadro (puede recortar bordes).' },
+  { value: 'contain', title: 'Producto entero', text: 'Se ve completo, sin cortar nada.' },
+  { value: 'cover', title: 'Llenar el recuadro', text: 'Ocupa todo; puede cortar los bordes.' },
 ]
 
 const photoKey = (url, i) => `${i}-${url.slice(-24)}`
@@ -323,8 +323,9 @@ function PhotosPicker({ photos, fit, onPhotos, onFit }) {
           </div>
 
           <div>
-            <p className="text-[15px] font-semibold">¿Qué tipo de fotos son?</p>
-            <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+            <p className="text-[15px] font-semibold">¿Cómo se ve en la tarjeta?</p>
+            <p className="mt-0.5 text-[13px] text-muted">Elegí la que quede mejor. Las fotos con fondo blanco se recortan solas para que el producto se vea grande.</p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
               {FIT_OPTIONS.map((option) => {
                 const active = fit === option.value
                 return (
@@ -333,14 +334,25 @@ function PhotosPicker({ photos, fit, onPhotos, onFit }) {
                     type="button"
                     aria-pressed={active}
                     onClick={() => onFit(option.value)}
-                    className={`relative cursor-pointer rounded-xl p-3.5 text-left transition-all duration-200 ${
+                    className={`relative flex cursor-pointer items-center gap-3 rounded-xl p-2.5 text-left transition-all duration-200 ${
                       active ? 'bg-[#fbf7ec] ring-2 ring-gold' : 'bg-[#f5f6f8] ring-1 ring-black/[0.06] hover:ring-black/20'
                     }`}
                   >
-                    <span className="block text-[14px] font-semibold">{option.title}</span>
-                    <span className="mt-0.5 block text-[13px] leading-snug text-muted">{option.text}</span>
+                    {principal && (
+                      <span className="aspect-[4/5] w-14 shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-black/10 sm:w-16">
+                        <img
+                          src={productImageUrl(principal, 480)}
+                          alt=""
+                          className={`size-full ${option.value === 'contain' ? 'img-studio p-[5%]' : 'object-cover'}`}
+                        />
+                      </span>
+                    )}
+                    <span className="min-w-0 pr-5">
+                      <span className="block text-[14px] font-semibold">{option.title}</span>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-muted sm:text-[13px]">{option.text}</span>
+                    </span>
                     {active && (
-                      <span className="absolute top-3 right-3 grid size-5 place-items-center rounded-full bg-gold text-on-gold">
+                      <span className="absolute top-2.5 right-2.5 grid size-5 place-items-center rounded-full bg-gold text-on-gold">
                         <Check size={12} weight="bold" />
                       </span>
                     )}
@@ -348,7 +360,6 @@ function PhotosPicker({ photos, fit, onPhotos, onFit }) {
                 )
               })}
             </div>
-            {principal && <p className="mt-2 text-[13px] text-muted">Lo elegimos solos según la primera foto; cambialo si se ve mal en la vista previa.</p>}
           </div>
         </div>
       </div>

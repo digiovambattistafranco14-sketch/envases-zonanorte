@@ -56,6 +56,7 @@ export default function Footer() {
                 <a href="#rubros" onClick={() => setCatalogCategory(category.id)} className={linkClass}>
                   {category.label}
                 </a>
+                {category.detail && <p className="-mt-1 mb-1 max-w-[16rem] text-[12px] leading-snug text-on-panel/45">{category.detail}</p>}
               </li>
             ))}
           </ul>

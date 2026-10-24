@@ -9,6 +9,7 @@ import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilte
 import { useRoute } from '../lib/router.js'
 import { contactUrl } from '../lib/whatsapp.js'
 import LogoSeal from './LogoSeal.jsx'
+import SearchDialog, { SearchButton } from './SearchDialog.jsx'
 import { WhatsAppGlyph } from './WhatsAppButton.jsx'
 
 const NAV_HREFS = navLinks.map((link) => link.href)
@@ -23,15 +24,16 @@ function HeaderCategory({ category, active }) {
     <a
       href="#rubros"
       onClick={() => setCatalogCategory(category.id)}
+      title={category.detail}
       aria-current={active ? 'true' : undefined}
-      className={`relative px-2.5 py-2 text-[14px] font-semibold tracking-[0.08em] whitespace-nowrap uppercase transition-colors duration-300 2xl:px-3.5 2xl:text-[15px] ${
+      className={`relative px-2 py-2 text-[13px] font-semibold tracking-[0.05em] whitespace-nowrap uppercase transition-colors duration-300 min-[1400px]:px-2.5 min-[1400px]:text-[14px] min-[1400px]:tracking-[0.08em] 2xl:px-3.5 2xl:text-[15px] ${
         active ? 'text-gold-light' : 'text-on-panel/85 hover:text-gold-light'
       }`}
     >
       {category.short ?? category.label}
       <span
         aria-hidden="true"
-        className={`absolute inset-x-2.5 -bottom-0.5 h-[2px] origin-left bg-gold transition-transform duration-500 ease-out-soft 2xl:inset-x-3.5 ${
+        className={`absolute inset-x-2 -bottom-0.5 h-[2px] origin-left bg-gold transition-transform duration-500 ease-out-soft min-[1400px]:inset-x-2.5 2xl:inset-x-3.5 ${
           active ? 'scale-x-100' : 'scale-x-0'
         }`}
       />
@@ -109,6 +111,7 @@ function MenuToggle({ open, onClick }) {
 // rubros, WhatsApp y carrito a la derecha. En pantallas chicas, menú.
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [focused, setFocused] = useState(false)
   // No se oculta con el menú abierto ni mientras se navega con teclado dentro.
   const { hidden, scrolled } = useHeaderVisibility(menuOpen || focused)
@@ -119,6 +122,25 @@ export default function Header() {
   const active = onHome ? activeSection : '#rubros'
   const selectedCategory = useCatalogCategory()
   const isActiveCategory = (id) => onHome && selectedCategory !== ALL && selectedCategory === id
+
+  // Buscador: Ctrl+K o "/" (si no se está escribiendo en otro campo).
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable
+      if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !typing)) {
+        e.preventDefault()
+        setMenuOpen(false)
+        setSearchOpen(true)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const openSearch = () => {
+    setMenuOpen(false)
+    setSearchOpen(true)
+  }
 
   // Cerrar el menú móvil con Escape.
   useEffect(() => {
@@ -146,6 +168,9 @@ export default function Header() {
       <div className="grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 sm:h-[4.75rem] sm:px-6 lg:px-8 xl:gap-6">
         <div className="flex items-center">
           <MenuToggle open={menuOpen} onClick={() => setMenuOpen((open) => !open)} />
+          <span className="xl:hidden">
+            <SearchButton onClick={openSearch} />
+          </span>
           <nav aria-label="Rubros" className="hidden w-full items-center justify-between gap-2 xl:flex">
             <span className="flex items-center gap-2.5 text-[12px] font-bold tracking-[0.28em] text-gold-light uppercase">
               <span aria-hidden="true" className="h-px w-6 bg-gold" />
@@ -181,6 +206,9 @@ export default function Header() {
             ))}
           </nav>
           <span className="flex items-center gap-2">
+            <span className="hidden xl:block">
+              <SearchButton onClick={openSearch} />
+            </span>
             <WhatsAppHeaderButton />
             <CartButton />
           </span>
@@ -221,9 +249,10 @@ export default function Header() {
                   setCatalogCategory(category.id)
                   setMenuOpen(false)
                 }}
-                className="flex min-h-11 items-center text-[15px] text-on-panel/80 hover:text-gold-light"
+                className="flex min-h-11 flex-col justify-center text-[15px] text-on-panel/80 hover:text-gold-light"
               >
                 {category.short ?? category.label}
+                {category.detail && <span className="text-[11px] leading-snug text-on-panel/45">{category.detail}</span>}
               </a>
             </li>
           ))}
@@ -234,6 +263,8 @@ export default function Header() {
         </a>
       </nav>
       </div>
+      {/* El buscador se abre en la capa superior (no lo afecta que la barra se oculte) */}
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   )
 }

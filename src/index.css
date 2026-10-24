@@ -353,3 +353,24 @@ body::after {
     }
   }
 }
+
+/* Buscador */
+.search-dialog::backdrop {
+  background: rgb(17 17 19 / 0.6);
+  backdrop-filter: blur(4px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .search-dialog[open] {
+    animation: dialog-in 0.4s var(--ease-out-soft);
+  }
+}
+
+/* Foto ampliada del producto */
+.lightbox::backdrop {
+  background: rgb(10 10 12 / 0.94);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lightbox[open] {
+    animation: photo-in 0.3s var(--ease-out-soft);
+  }
+}

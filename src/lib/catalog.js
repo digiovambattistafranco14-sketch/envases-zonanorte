@@ -249,16 +249,13 @@ export async function uploadImage(file) {
   const bitmap = await createImageBitmap(file).catch(() => {
     throw new CatalogError('No pudimos abrir esa imagen. Probá con una JPG o PNG.')
   })
-  const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.round(bitmap.width * scale)
-  canvas.height = Math.round(bitmap.height * scale)
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  ctx.fillStyle = '#fff' // las PNG transparentes quedan sobre blanco
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  // Se trabaja sobre una copia de hasta 1600 px (para recortar sin perder nitidez).
+  const work = drawOnWhite(bitmap, Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height)))
   bitmap.close()
-  const fit = hasWhiteBorder(ctx, canvas) ? 'contain' : 'cover'
+  const studio = hasWhiteBorder(work.getContext('2d'), work)
+  const fit = studio ? 'contain' : 'cover'
+  // Foto de estudio: se recorta el blanco que sobra para que el producto se vea grande.
+  const canvas = studio ? trimWhite(work) : drawOnWhite(work, Math.min(1, 1000 / Math.max(work.width, work.height)))
 
   if (!hasSupabase) return { url: canvas.toDataURL('image/webp', 0.82), fit }
 
@@ -269,6 +266,70 @@ export async function uploadImage(file) {
   const { error } = await supabase.storage.from(PHOTOS_BUCKET).upload(path, blob, { contentType: blob.type, cacheControl: '31536000' })
   if (error) throw new CatalogError('No se pudo subir la foto. Revisá la conexión y probá de nuevo.')
   return { url: supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl, fit }
+}
+
+// Copia la imagen (escalada) sobre fondo blanco: las PNG transparentes quedan sobre blanco.
+function drawOnWhite(source, scale) {
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(source.width * scale))
+  canvas.height = Math.max(1, Math.round(source.height * scale))
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height)
+  return canvas
+}
+
+// Recorta el fondo blanco alrededor del producto, deja un margen chico y lo
+// centra en un recuadro 4:5 (la forma de las tarjetas), de hasta 1000 px de alto.
+function trimWhite(source) {
+  const { width, height } = source
+  const { data } = source.getContext('2d').getImageData(0, 0, width, height)
+  let top = height
+  let left = width
+  let right = -1
+  let bottom = -1
+  const step = width * height > 1_000_000 ? 2 : 1
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const i = (y * width + x) * 4
+      if (Math.min(data[i], data[i + 1], data[i + 2]) < 236) {
+        if (x < left) left = x
+        if (x > right) right = x
+        if (y < top) top = y
+        if (y > bottom) bottom = y
+      }
+    }
+  }
+  if (right < 0) return drawOnWhite(source, Math.min(1, 1000 / Math.max(width, height))) // toda blanca
+
+  const margin = Math.round(Math.max(right - left, bottom - top) * 0.06)
+  left = Math.max(0, left - margin)
+  top = Math.max(0, top - margin)
+  right = Math.min(width - 1, right + margin)
+  bottom = Math.min(height - 1, bottom + margin)
+  const cropW = right - left + 1
+  const cropH = bottom - top + 1
+
+  // Recuadro 4:5 que contiene el recorte.
+  const ASPECT = 4 / 5
+  let boxW = cropW
+  let boxH = cropH
+  if (cropW / cropH > ASPECT) boxH = Math.round(cropW / ASPECT)
+  else boxW = Math.round(cropH * ASPECT)
+  const scale = Math.min(1, 1000 / boxH)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(boxW * scale)
+  canvas.height = Math.round(boxH * scale)
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.imageSmoothingQuality = 'high'
+  const drawW = cropW * scale
+  const drawH = cropH * scale
+  ctx.drawImage(source, left, top, cropW, cropH, (canvas.width - drawW) / 2, (canvas.height - drawH) / 2, drawW, drawH)
+  return canvas
 }
 
 // ¿El borde de la foto es casi todo blanco? (foto de estudio)

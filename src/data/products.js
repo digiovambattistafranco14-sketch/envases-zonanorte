@@ -5,6 +5,7 @@
 // price: número en pesos, o null para mostrar "Precio a consultar".
 // variants: opcional. Cada variante puede tener su propio price.
 // specs: características que se muestran en la vista de detalle.
+// detail: texto chico opcional que aclara qué entra en el rubro.
 // category: rubro principal. alsoIn: otros rubros donde también aparece.
 // imageFit: 'cover' (foto ambientada, llena el recuadro) o 'contain' (foto de
 // estudio con fondo blanco: se ve entera y el fondo se funde con el recuadro).
@@ -18,7 +19,12 @@ export const categories = [
   { id: 'deco-hogar', label: 'Deco Hogar', image: 'ambiente-difusor-tallado' },
   { id: 'laboratorio', label: 'Laboratorio', image: 'vasito-medidor' },
   { id: 'perfumeria', label: 'Perfumería', image: 'potes-nacar-ovoide' },
-  { id: 'varios', label: 'Varios', image: 'vasos-cilindricos' },
+  {
+    id: 'varios',
+    label: 'Artículos varios',
+    detail: 'Tapas · Válvulas · Insertos · Capuchones · Varillas · etc.',
+    image: 'vasos-cilindricos',
+  },
 ]
 
 export const products = [

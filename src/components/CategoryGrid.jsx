@@ -36,6 +36,9 @@ function CategoryOption({ option, active, count, onSelect }) {
       </span>
       <span className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-[16px] font-semibold sm:text-[18px]">{option.short ?? option.label}</span>
+        {option.detail && (
+          <span className={`mt-0.5 line-clamp-2 text-[11px] leading-snug sm:text-[12px] ${active ? 'text-on-panel/70' : 'text-muted'}`}>{option.detail}</span>
+        )}
         <span className={`text-[13px] sm:text-[14px] ${active ? 'text-gold-light' : 'text-muted'}`}>{plural(count)}</span>
       </span>
     </button>
@@ -47,7 +50,8 @@ export default function CategoryGrid() {
   const products = usePublishedProducts()
   const current = useCatalogCategory()
   const visible = current === ALL ? products : products.filter((p) => isInCategory(p, current))
-  const label = current === ALL ? 'Todos los productos' : OPTIONS.find((o) => o.id === current)?.label
+  const selected = OPTIONS.find((o) => o.id === current)
+  const label = current === ALL ? 'Todos los productos' : selected?.label
 
   return (
     <Panel id="rubros" tone="light">
@@ -69,6 +73,7 @@ export default function CategoryGrid() {
         <p aria-live="polite" className="mt-10 text-[17px] text-muted sm:text-[19px]">
           <span className="font-semibold text-ink">{label}</span> · {plural(visible.length)}
         </p>
+        {selected?.detail && <p className="mt-1 text-[14px] text-muted sm:text-[15px]">{selected.detail}</p>}
 
         {/* key: al cambiar de rubro la grilla vuelve a entrar con una animación suave */}
         <div key={current} className="page-in">
