@@ -197,7 +197,7 @@ export default function Header() {
             alt=""
             eager
             sizes="104px"
-            className="absolute top-1.5 left-1/2 h-[4.7rem] w-auto max-w-none -translate-x-1/2 drop-shadow-[0_12px_20px_rgb(0_0_0/0.45)] transition-transform duration-500 ease-out-soft hover:scale-[1.04] sm:top-2 sm:h-[6.4rem]"
+            className="absolute top-0.5 left-1/2 h-[4.7rem] w-auto max-w-none -translate-x-1/2 drop-shadow-[0_12px_20px_rgb(0_0_0/0.45)] transition-transform duration-500 ease-out-soft hover:scale-[1.04] sm:top-0 sm:h-[6.4rem]"
           />
         </a>
 
