@@ -1,4 +1,4 @@
-import { FacebookLogo, InstagramLogo, MapPin, Truck, WhatsappLogo } from './icons.jsx'
+import { ChatsCircle, FacebookLogo, InstagramLogo, MapPin, Truck, WhatsappLogo } from './icons.jsx'
 import { site } from '../config/site.js'
 import { categories } from '../data/products.js'
 import { setCatalogCategory } from '../lib/catalogFilter.js'
@@ -45,6 +45,12 @@ export default function Footer() {
                     </a>
                   </li>
                 ))}
+                <li>
+                  <a href="#consultas" className={linkClass}>
+                    <ChatsCircle size={18} />
+                    Consultas
+                  </a>
+                </li>
                 <li className="flex min-h-9 items-center gap-2">
                   <MapPin size={18} />
                   Zona Norte y GBA

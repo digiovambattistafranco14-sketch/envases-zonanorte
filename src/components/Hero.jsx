@@ -1,4 +1,4 @@
-import { ArrowRight } from './icons.jsx'
+import { ArrowRight, ChatsCircle } from './icons.jsx'
 import { useMemo } from 'react'
 import { useCarousel } from '../lib/carousel.js'
 import { usePublishedProducts } from '../lib/catalog.js'
@@ -39,12 +39,18 @@ export default function Hero() {
           <p className="font-display text-[22px] leading-snug sm:text-[26px]">
             Envases para cada rubro, <em className="text-gold-light">por mayor y por menor</em>
           </p>
-          <a href="#rubros" className="btn btn-gold group shrink-0">
-            Ver rubros
-            <span className="btn-chip">
-              <ArrowRight size={16} weight="bold" />
-            </span>
-          </a>
+          <div className="flex shrink-0 flex-wrap justify-center gap-3">
+            <a href="#rubros" className="btn btn-gold group">
+              Ver rubros
+              <span className="btn-chip">
+                <ArrowRight size={16} weight="bold" />
+              </span>
+            </a>
+            <a href="#consultas" className="btn btn-ghost-light">
+              <ChatsCircle size={18} />
+              Hacer una consulta
+            </a>
+          </div>
         </div>
       </div>
     </section>

@@ -86,14 +86,17 @@ export default function ContactForm() {
             loading="lazy"
             className="absolute inset-0 -z-10 size-full object-cover object-[68%_40%]"
           />
-          <span aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-black/90 via-black/45 to-black/10" />
-          <p className="flex items-center gap-3 eyebrow text-gold-light!">
+          <span aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-black/90 via-black/60 to-black/35" />
+          <p className="flex items-center gap-3 eyebrow text-gold-light! [text-shadow:0_1px_8px_rgb(0_0_0/0.8)]">
             <span aria-hidden="true" className="h-px w-8 bg-current" />
             Consultas
           </p>
-          <h2 className="mt-4 font-display text-4xl leading-[1.05] tracking-[-0.02em] sm:text-5xl">
-            Te asesoramos <em className="text-gold-light">sin compromiso</em>
+          <h2 className="mt-4 font-display text-4xl leading-[1.05] tracking-[-0.02em] text-balance sm:text-5xl">
+            Nuestra experiencia en <em className="text-gold-light">décadas.</em>
           </h2>
+          <p className="mt-4 max-w-[34ch] font-display text-[20px] leading-snug text-on-panel/85 sm:text-[22px]">
+            Hoy nos brinda la posibilidad en asesorarlo con gran gusto.
+          </p>
           <p className="mt-6 text-[15px] text-on-panel/75">
             WhatsApp <span className="font-semibold text-on-panel">{site.whatsapp.display}</span>
           </p>
