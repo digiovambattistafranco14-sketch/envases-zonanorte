@@ -55,8 +55,45 @@ export function useSession() {
   return useSyncExternalStore(subscribe, () => session)
 }
 
+// Freno a quien prueba contraseñas: después de 5 intentos fallidos hay que
+// esperar 30 s, y la espera se duplica con cada nuevo error (hasta 15 min).
+// Supabase además limita los intentos de su lado.
+const ATTEMPTS_KEY = 'efzn-admin-intentos'
+const FREE_ATTEMPTS = 5
+
+function readAttempts() {
+  try {
+    return JSON.parse(localStorage.getItem(ATTEMPTS_KEY)) ?? { fails: 0, until: 0 }
+  } catch {
+    return { fails: 0, until: 0 }
+  }
+}
+
+function writeAttempts(value) {
+  try {
+    if (value) localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(value))
+    else localStorage.removeItem(ATTEMPTS_KEY)
+  } catch {
+    // Sin almacenamiento solo queda el límite de Supabase.
+  }
+}
+
+function registerFailure() {
+  const fails = readAttempts().fails + 1
+  const extra = fails - FREE_ATTEMPTS
+  const until = extra >= 0 ? Date.now() + Math.min(30_000 * 2 ** extra, 15 * 60_000) : 0
+  writeAttempts({ fails, until })
+}
+
+const waitText = (ms) => {
+  const seconds = Math.ceil(ms / 1000)
+  return seconds > 90 ? `${Math.ceil(seconds / 60)} minutos` : `${seconds} segundos`
+}
+
 export async function signIn(email, password) {
   if (!email.trim() || !password) throw new Error('Completá el email y la contraseña.')
+  const { until } = readAttempts()
+  if (until > Date.now()) throw new Error(`Demasiados intentos fallidos. Esperá ${waitText(until - Date.now())} y probá de nuevo.`)
   if (!hasSupabase) {
     try {
       sessionStorage.setItem(DEMO_KEY, email.trim())
@@ -69,10 +106,14 @@ export async function signIn(email, password) {
   const supabase = await getSupabase()
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
   if (error) {
-    throw new Error(
-      error.status === 400 ? 'El email o la contraseña no son correctos.' : 'No pudimos conectarnos. Revisá internet y probá de nuevo.',
-    )
+    if (error.status === 400) {
+      registerFailure()
+      throw new Error('El email o la contraseña no son correctos.')
+    }
+    if (error.status === 429) throw new Error('Demasiados intentos. Esperá unos minutos y probá de nuevo.')
+    throw new Error('No pudimos conectarnos. Revisá internet y probá de nuevo.')
   }
+  writeAttempts(null)
 }
 
 export async function signOut() {

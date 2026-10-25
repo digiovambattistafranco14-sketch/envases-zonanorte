@@ -134,9 +134,10 @@ values
 on conflict (id) do nothing;
 
 -- 7. El dueño como administrador ------------------------------------------------
--- Marca como administradores a los usuarios que existan en Authentication > Users.
+-- Se corrió una sola vez, al crear la base, cuando el único usuario era el dueño.
+-- Para sumar otro administrador, cambiar el email y correr solo esto:
 insert into public.admins (user_id)
-select id from auth.users
+select id from auth.users where email = 'EMAIL_DEL_DUEÑO'
 on conflict do nothing;
 
 -- Verificación: tiene que mostrar el email del dueño.
