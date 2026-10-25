@@ -54,9 +54,14 @@ export default function CategoryGrid() {
   const label = current === ALL ? 'Todos los productos' : selected?.label
 
   return (
-    <Panel id="rubros" tone="light">
+    <Panel id="rubros" tone="light" innerClassName="pt-9 pb-14 md:pt-12 md:pb-20">
       <div className="container-page">
-        <SectionHeading eyebrow="Nuestros rubros" title="Elegí tu" accent="rubro" />
+        <SectionHeading
+          eyebrow="Nuestros rubros"
+          title="Elegí tu"
+          accent="rubro"
+          lead="Gastronomía, eventos, emprendedores, bazar, cotillón, etc."
+        />
 
         <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-3 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
           {OPTIONS.map((option) => (
