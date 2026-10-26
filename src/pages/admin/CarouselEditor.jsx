@@ -136,7 +136,7 @@ export default function CarouselEditor() {
           <span className="size-2 rounded-full bg-[#1f9d55]" />
           Vista previa
         </p>
-        <div inert>{preview.length > 0 ? <PhotoMarquee photos={preview} duration={Math.max(30, preview.length * 6)} label="Vista previa del carrusel" /> : <div className="h-32 sm:h-40" />}</div>
+        <div inert>{preview.length > 0 ? <PhotoMarquee photos={preview} label="Vista previa del carrusel" /> : <div className="h-32 sm:h-40" />}</div>
         <div className="h-4" />
       </section>
 

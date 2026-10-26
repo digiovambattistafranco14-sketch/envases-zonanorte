@@ -207,6 +207,9 @@ body::after {
 .marquee {
   mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 }
+.marquee.is-dragging {
+  cursor: grabbing;
+}
 
 /* Aparición al hacer scroll: solo si el usuario no pidió menos movimiento. */
 @media (prefers-reduced-motion: no-preference) {
@@ -267,22 +270,6 @@ body::after {
   }
 
   /* Carrusel continuo (velocidad constante a propósito) */
-  @keyframes marquee {
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  .marquee-track {
-    animation: marquee var(--marquee-duration, 60s) linear infinite;
-  }
-  .marquee-reverse {
-    animation-direction: reverse;
-  }
-  .marquee:hover .marquee-track,
-  .marquee:focus-within .marquee-track {
-    animation-play-state: paused;
-  }
-
   @keyframes badge-pop {
     0% {
       transform: scale(1);
@@ -301,13 +288,6 @@ body::after {
 
 @media (prefers-reduced-motion: reduce) {
   /* Sin animación: el carrusel queda quieto y se desliza a mano */
-  .marquee {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .marquee::-webkit-scrollbar {
-    display: none;
-  }
   *,
   *::before,
   *::after {

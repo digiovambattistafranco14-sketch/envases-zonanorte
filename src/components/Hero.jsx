@@ -31,7 +31,7 @@ export default function Hero() {
       <h1 className="sr-only">Envases &amp; Frascos Zona Norte</h1>
 
       <div className="hero-in">
-        <PhotoMarquee photos={photos} duration={140} label="Fotos de nuestros frascos" size="hero" />
+        <PhotoMarquee photos={photos} label="Fotos de nuestros frascos" size="hero" />
       </div>
 
       <div className="relative border-t border-gold/30">
