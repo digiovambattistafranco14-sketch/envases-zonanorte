@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Dispositivos con mouse (en celular y tablet no hay "pasar por encima") */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+
 /* Fuentes variables, subconjunto latino, servidas desde /fonts (se precargan en index.html). */
 @font-face {
   font-family: 'Plus Jakarta Sans Variable';
@@ -386,6 +389,32 @@ body::after {
     to {
       transform: scale(4);
       opacity: 0;
+    }
+  }
+}
+
+/* Pie: lo que se puede tocar responde al toque (achica y se ilumina) y, al
+   aparecer, las flechas hacen un pequeño empujón para invitar a tocar. */
+.footer-link,
+.footer-card {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, scale, translate, box-shadow;
+  transition-duration: 200ms;
+}
+.footer-link:active {
+  background-color: rgb(255 255 255 / 0.06);
+  scale: 0.97;
+}
+.footer-card:active {
+  scale: 0.98;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reveal.is-visible .nudge {
+    animation: nudge 0.7s var(--ease-out-soft) 1s 2;
+  }
+  @keyframes nudge {
+    50% {
+      translate: 4px 0;
     }
   }
 }

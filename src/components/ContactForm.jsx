@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WhatsappLogo } from './icons.jsx'
+import { ArrowRight, Storefront, WhatsappLogo } from './icons.jsx'
 import { site } from '../config/site.js'
 import { whatsappUrl } from '../lib/whatsapp.js'
 import Reveal from './Reveal.jsx'
@@ -100,6 +100,21 @@ export default function ContactForm() {
           <p className="mt-6 text-[15px] text-on-panel/75">
             WhatsApp <span className="font-semibold text-on-panel">{site.whatsapp.display}</span>
           </p>
+          <a
+            href={site.location.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link group/local -mx-2 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 self-start rounded-xl px-2 py-1.5 text-[15px] text-on-panel/75"
+          >
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <Storefront size={17} className="text-gold-light" />
+              Local <span className="font-semibold text-on-panel">{site.location.address}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-gold-light">
+              Cómo llegar
+              <ArrowRight size={13} weight="bold" className="transition-transform duration-300 ease-out-soft group-hover/local:translate-x-1" />
+            </span>
+          </a>
         </Reveal>
 
         {/* Formulario */}
