@@ -6,6 +6,7 @@
 // variants: opcional. Cada variante puede tener su propio price.
 // specs: características que se muestran en la vista de detalle.
 // detail: texto chico opcional que aclara qué entra en el rubro.
+// short: nombre corto (en todos lados); nav: nombre corto solo para la cabecera.
 // category: rubro principal. alsoIn: otros rubros donde también aparece.
 // imageFit: 'cover' (foto ambientada, llena el recuadro) o 'contain' (foto de
 // estudio con fondo blanco: se ve entera y el fondo se funde con el recuadro).
@@ -19,6 +20,8 @@ export const categories = [
   { id: 'deco-hogar', label: 'Deco Hogar', image: 'ambiente-difusor-tallado' },
   { id: 'laboratorio', label: 'Laboratorio', image: 'vasito-medidor' },
   { id: 'perfumeria', label: 'Perfumería', image: 'potes-nacar-ovoide' },
+  // Sin foto propia todavía: se muestra la del primer producto del rubro (o un ícono).
+  { id: 'velas', label: 'Velas e insumos', nav: 'Velas' },
   {
     id: 'varios',
     label: 'Artículos varios',

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowSquareOut, CaretLeft, CaretRight, Check, Plus, Star, Trash, UploadSimple, X } from '../../components/icons.jsx'
+import { ArrowLeft, ArrowSquareOut, CaretLeft, CaretRight, Check, Flame, Plus, Star, Trash, UploadSimple, X } from '../../components/icons.jsx'
 import ProductCard from '../../components/ProductCard.jsx'
 import { productImageUrl } from '../../components/ProductImage.jsx'
 import { categories, getCategoryLabel } from '../../data/products.js'
@@ -385,7 +385,13 @@ function CategoryPicker({ value, onChange, error }) {
               active ? 'bg-panel text-on-panel ring-2 ring-gold' : `bg-[#f5f6f8] ring-1 hover:ring-black/25 ${error ? 'ring-[#e3a39b]' : 'ring-black/[0.06]'}`
             }`}
           >
-            <img src={`/img/galeria/${c.image}.webp`} alt="" loading="lazy" className="size-10 shrink-0 rounded-lg bg-white object-cover" />
+            {c.image ? (
+              <img src={`/img/galeria/${c.image}.webp`} alt="" loading="lazy" className="size-10 shrink-0 rounded-lg bg-white object-cover" />
+            ) : (
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-white text-gold-ink">
+                <Flame size={20} />
+              </span>
+            )}
             <span className="truncate text-[14px] font-semibold">{c.short ?? c.label}</span>
           </button>
         )

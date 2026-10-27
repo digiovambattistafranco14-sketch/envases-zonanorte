@@ -354,3 +354,38 @@ body::after {
     animation: photo-in 0.3s var(--ease-out-soft);
   }
 }
+
+/* Rubros de la cabecera: la letra y el espacio crecen con el ancho de la
+   pantalla, para que los 8 rubros entren desde 1280 px sin correr el logo. */
+.nav-cat {
+  --nav-pad: clamp(5px, 0.5vw, 14px);
+  padding-inline: var(--nav-pad);
+  font-size: clamp(12px, 0.62vw + 4.5px, 15px);
+  letter-spacing: 0.05em;
+}
+
+/* Mapa del local: el marcador rebota suave y el punto del local late */
+@media (prefers-reduced-motion: no-preference) {
+  .group:hover .map-pin {
+    animation: pin-bounce 0.9s var(--ease-out-soft);
+  }
+  @keyframes pin-bounce {
+    40% {
+      translate: 0 -8px;
+    }
+  }
+  .map-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: map-pulse 2s ease-out infinite;
+  }
+  @keyframes map-pulse {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+}

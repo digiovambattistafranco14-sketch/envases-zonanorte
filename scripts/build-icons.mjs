@@ -22,6 +22,7 @@ const ICONS = [
   'eye',
   'eye-slash',
   'facebook-logo',
+  'flame',
   'image',
   'images',
   'info',

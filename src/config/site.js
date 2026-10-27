@@ -9,6 +9,12 @@ export const site = {
   },
   // Mail de consultas. Dejar vacío para ocultarlo (las consultas igual llegan por WhatsApp).
   email: '',
+  // Local. El mapa (public/img/mapa-local.webp) se genera con scripts/build-map.mjs.
+  location: {
+    address: 'Chile 2120, Virreyes',
+    mapsUrl:
+      'https://www.google.com/maps/place/Envases+Zona+Norte/@-34.4664134,-58.5843309,17z/data=!4m6!3m5!1s0x95bca50dd9faddcd:0xd259dd4037ecb374!8m2!3d-34.4664134!4d-58.5843309',
+  },
   // Texto de envíos del footer (va debajo de "Realizamos envíos").
   shipping: 'Zona Norte, puntos de encuentro, Capital Federal y a todo el país (consultar).',
   // Dejar vacío para ocultar el ícono en el footer.

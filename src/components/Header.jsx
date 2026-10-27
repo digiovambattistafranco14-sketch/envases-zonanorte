@@ -17,8 +17,11 @@ const NAV_HREFS = navLinks.map((link) => link.href)
 // Rubros en la barra (como pidió el cliente), repartidos a los dos lados del
 // logo: 4 a la izquierda y 3 a la derecha (que además tiene los botones), así
 // las dos mitades pesan parecido. Tocar uno lo elige en "Elegí tu rubro".
-const LEFT_CATEGORIES = categories.slice(0, 4)
-const RIGHT_CATEGORIES = categories.slice(4)
+// El lado derecho además tiene la lupa, WhatsApp y el carrito: le tocan los
+// rubros de nombre más corto, así las dos mitades entran.
+const RIGHT_IDS = ['limpieza', 'perfumeria', 'velas', 'varios']
+const LEFT_CATEGORIES = categories.filter((c) => !RIGHT_IDS.includes(c.id))
+const RIGHT_CATEGORIES = RIGHT_IDS.map((id) => categories.find((c) => c.id === id)).filter(Boolean)
 
 function HeaderCategory({ category, active }) {
   return (
@@ -27,14 +30,14 @@ function HeaderCategory({ category, active }) {
       onClick={() => setCatalogCategory(category.id)}
       title={category.detail}
       aria-current={active ? 'true' : undefined}
-      className={`relative px-2 py-2 text-[13px] font-semibold tracking-[0.05em] whitespace-nowrap uppercase transition-colors duration-300 min-[1400px]:px-2.5 min-[1400px]:text-[14px] min-[1400px]:tracking-[0.08em] 2xl:px-3.5 2xl:text-[15px] ${
+      className={`nav-cat relative py-2 font-semibold whitespace-nowrap uppercase transition-colors duration-300 ${
         active ? 'text-gold-light' : 'text-on-panel/85 hover:text-gold-light'
       }`}
     >
-      {category.short ?? category.label}
+      {category.nav ?? category.short ?? category.label}
       <span
         aria-hidden="true"
-        className={`absolute inset-x-2 -bottom-0.5 h-[2px] origin-left bg-gold transition-transform duration-500 ease-out-soft min-[1400px]:inset-x-2.5 2xl:inset-x-3.5 ${
+        className={`absolute inset-x-(--nav-pad) -bottom-0.5 h-[2px] origin-left bg-gold transition-transform duration-500 ease-out-soft ${
           active ? 'scale-x-100' : 'scale-x-0'
         }`}
       />

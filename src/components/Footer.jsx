@@ -1,8 +1,9 @@
-import { ChatsCircle, FacebookLogo, InstagramLogo, MapPin, Truck, WhatsappLogo } from './icons.jsx'
+import { ChatsCircle, FacebookLogo, InstagramLogo, MapPin, Storefront, Truck, WhatsappLogo } from './icons.jsx'
 import { site } from '../config/site.js'
 import { categories } from '../data/products.js'
 import { setCatalogCategory } from '../lib/catalogFilter.js'
 import { contactUrl } from '../lib/whatsapp.js'
+import LocationMap from './LocationMap.jsx'
 import LogoSeal from './LogoSeal.jsx'
 
 const socials = [
@@ -51,6 +52,12 @@ export default function Footer() {
                     Consultas
                   </a>
                 </li>
+                <li>
+                  <a href={site.location.mapsUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                    <Storefront size={18} />
+                    {site.location.address}
+                  </a>
+                </li>
                 <li className="flex min-h-9 items-center gap-2">
                   <MapPin size={18} />
                   Zona Norte y GBA
@@ -69,19 +76,24 @@ export default function Footer() {
             </div>
           </div>
 
-          <nav aria-label="Rubros">
-            <h3 className="text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Rubros</h3>
-            <ul className="mt-4 grid grid-cols-2 gap-x-12 text-[15px] text-on-panel/75">
-              {categories.map((category) => (
-                <li key={category.id}>
-                  <a href="#rubros" onClick={() => setCatalogCategory(category.id)} className={linkClass}>
-                    {category.label}
-                  </a>
-                  {category.detail && <p className="-mt-1 mb-1 max-w-[16rem] text-[12px] leading-snug text-on-panel/45">{category.detail}</p>}
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <div className="md:w-[30rem] lg:w-[34rem]">
+            <nav aria-label="Rubros">
+              <h3 className="text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Rubros</h3>
+              <ul className="mt-4 grid grid-cols-2 gap-x-12 text-[15px] text-on-panel/75">
+                {categories.map((category) => (
+                  <li key={category.id}>
+                    <a href="#rubros" onClick={() => setCatalogCategory(category.id)} className={linkClass}>
+                      {category.label}
+                    </a>
+                    {category.detail && <p className="-mt-1 mb-1 max-w-[16rem] text-[12px] leading-snug text-on-panel/45">{category.detail}</p>}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <h3 className="mt-10 text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Nuestro local</h3>
+            <LocationMap className="mt-4" />
+          </div>
         </div>
 
         <div className="border-t border-white/10">

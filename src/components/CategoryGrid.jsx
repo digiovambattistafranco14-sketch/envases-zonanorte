@@ -1,8 +1,9 @@
-import { WhatsappLogo } from './icons.jsx'
+import { Flame, WhatsappLogo } from './icons.jsx'
 import { categories, isInCategory } from '../data/products.js'
 import { usePublishedProducts } from '../lib/catalog.js'
 import { ALL, setCatalogCategory, useCatalogCategory } from '../lib/catalogFilter.js'
 import { contactUrl } from '../lib/whatsapp.js'
+import { productImageUrl } from './ProductImage.jsx'
 import Panel from './Panel.jsx'
 import ProductCard from './ProductCard.jsx'
 import SectionHeading from './SectionHeading.jsx'
@@ -13,7 +14,9 @@ const countIn = (products, id) => (id === ALL ? products.length : products.filte
 const plural = (n) => `${n} ${n === 1 ? 'producto' : 'productos'}`
 
 // Opción del selector: miniatura redonda + nombre + cantidad.
-function CategoryOption({ option, active, count, onSelect }) {
+function CategoryOption({ option, active, count, fallbackImage, onSelect }) {
+  // Rubro sin foto propia: la del primer producto que tenga, o una llamita.
+  const src = option.image ? `/img/galeria/${option.image}.webp` : fallbackImage && productImageUrl(fallbackImage, 480)
   return (
     <button
       type="button"
@@ -26,13 +29,19 @@ function CategoryOption({ option, active, count, onSelect }) {
       }`}
     >
       <span className={`size-12 shrink-0 overflow-hidden rounded-full sm:size-14 bg-white ring-1 ${active ? 'ring-gold/60' : 'ring-black/5'}`}>
-        <img
-          src={`/img/galeria/${option.image}.webp`}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          className="size-full object-cover transition-transform duration-500 ease-out-soft group-hover:scale-110"
-        />
+        {src ? (
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover transition-transform duration-500 ease-out-soft group-hover:scale-110"
+          />
+        ) : (
+          <span className="grid size-full place-items-center text-gold-ink">
+            <Flame size={26} />
+          </span>
+        )}
       </span>
       <span className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-[16px] font-semibold sm:text-[18px]">{option.short ?? option.label}</span>
@@ -63,13 +72,14 @@ export default function CategoryGrid() {
           lead="Gastronomía, Eventos, Emprendedores, Bazar, Cotillón, etc."
         />
 
-        <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-3 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
+        <div role="group" aria-label="Rubros" className="no-scrollbar -mx-4 mt-10 flex gap-3 overflow-x-auto px-4 py-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {OPTIONS.map((option) => (
             <CategoryOption
               key={option.id}
               option={option}
               active={option.id === current}
               count={countIn(products, option.id)}
+              fallbackImage={option.image ? null : products.find((p) => isInCategory(p, option.id) && p.image)?.image}
               onSelect={setCatalogCategory}
             />
           ))}
