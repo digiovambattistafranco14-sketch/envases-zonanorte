@@ -11,7 +11,9 @@ import QuantityStepper from './QuantityStepper.jsx'
 export default function ProductCard({ product }) {
   const { qty, setQty, price, added, add } = useProductOrder(product)
   const href = productHref(product.id)
-  const hasVariants = Boolean(product.variants?.length)
+  const sizes = Boolean(product.variants?.length)
+  const versions = Boolean(product.versions?.length)
+  const hasVariants = sizes || versions // hay que elegir antes de agregar
 
   return (
     <article className="card-shell group flex h-full flex-col overflow-hidden transition-shadow duration-500 ease-out-soft hover:shadow-card-hover">
@@ -43,7 +45,7 @@ export default function ProductCard({ product }) {
               href={href}
               className="btn btn-primary group mt-2.5 w-full max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] max-sm:tracking-[0.05em] sm:mt-3 sm:justify-between sm:pl-6 sm:text-[14px]"
             >
-              Elegir tamaño
+              {sizes && versions ? 'Elegir opciones' : sizes ? 'Elegir tamaño' : 'Elegir versión'}
               <span className="btn-chip max-sm:hidden">
                 <ArrowRight size={15} weight="bold" />
               </span>

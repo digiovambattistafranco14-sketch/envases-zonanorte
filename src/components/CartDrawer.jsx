@@ -52,7 +52,7 @@ function CartLine({ line }) {
   return (
     <li className="flex gap-4 py-4">
       <img
-        src={productImageUrl(line.product.image)}
+        src={productImageUrl(line.image)}
         loading="lazy"
         alt=""
         className={`size-20 shrink-0 rounded-xl bg-stage ${

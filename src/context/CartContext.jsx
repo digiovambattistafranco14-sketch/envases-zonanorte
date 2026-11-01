@@ -6,19 +6,19 @@ export const MAX_QTY = 99999
 
 const CartContext = createContext(null)
 
-const lineKey = (productId, variantId) => (variantId ? `${productId}::${variantId}` : productId)
+const lineKey = (productId, variantId, versionId) => [productId, variantId, versionId].filter(Boolean).join('::')
 export const clampQty = (n) => Math.min(MAX_QTY, Math.max(1, Math.floor(Number(n)) || 1))
 
 function reducer(items, action) {
   switch (action.type) {
     case 'add': {
-      const key = lineKey(action.productId, action.variantId)
+      const key = lineKey(action.productId, action.variantId, action.versionId)
       if (items.some((i) => i.key === key)) {
         return items.map((i) => (i.key === key ? { ...i, qty: clampQty(i.qty + action.qty) } : i))
       }
       return [
         ...items,
-        { key, productId: action.productId, variantId: action.variantId ?? null, qty: clampQty(action.qty) },
+        { key, productId: action.productId, variantId: action.variantId ?? null, versionId: action.versionId ?? null, qty: clampQty(action.qty) },
       ]
     }
     case 'setQty':
@@ -62,12 +62,15 @@ export function CartProvider({ children }) {
       const product = catalog.find((p) => p.id === item.productId)
       if (!product) return []
       const variant = product.variants?.find((v) => v.id === item.variantId) ?? null
+      const version = product.versions?.find((v) => v.id === item.versionId) ?? null
       const unitPrice = variant?.price ?? product.price ?? null
       return [{
         ...item,
         product,
         variant,
-        name: variant ? `${product.name} ${variant.label}` : product.name,
+        version,
+        image: version?.image || product.image,
+        name: [product.name, variant?.label, version && `(${version.label})`].filter(Boolean).join(' '),
         unitPrice,
         subtotal: unitPrice == null ? null : unitPrice * item.qty,
       }]
@@ -81,7 +84,7 @@ export function CartProvider({ children }) {
       isOpen,
       openCart,
       closeCart,
-      addItem: (productId, variantId, qty) => dispatch({ type: 'add', productId, variantId, qty }),
+      addItem: (productId, variantId, qty, versionId) => dispatch({ type: 'add', productId, variantId, versionId, qty }),
       setQty: (key, qty) => dispatch({ type: 'setQty', key, qty }),
       removeItem: (key) => dispatch({ type: 'remove', key }),
       clearCart: () => dispatch({ type: 'clear' }),

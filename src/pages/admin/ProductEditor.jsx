@@ -23,6 +23,7 @@ const SPEC_EXAMPLES = {
 const SPEC_SUGGESTIONS = Object.keys(SPEC_EXAMPLES)
 const DESCRIPTION_HINT = 300
 const MAX_PHOTOS = 10
+const VERSION_SUGGESTIONS = ['Tapa negra', 'Tapa dorada', 'Tapa plateada', 'Tapa blanca']
 
 let rowCounter = 0
 const rowKey = () => `r${(rowCounter += 1)}`
@@ -46,6 +47,7 @@ function toDraft(product) {
         { key: rowKey(), label: '', price: '' },
         { key: rowKey(), label: '', price: '' },
       ],
+      versions: [],
       specs: [
         { key: rowKey(), label: 'Material', value: '' },
         { key: rowKey(), label: 'Capacidad', value: '' },
@@ -72,6 +74,7 @@ function toDraft(product) {
           price: v.price == null ? '' : String(v.price),
         }))
       : [{ key: rowKey(), label: '', price: '' }],
+    versions: product.versions.map((v) => ({ key: rowKey(), id: v.id, label: v.label, image: v.image ?? null })),
     specs: product.specs.map((s) => ({
       key: rowKey(),
       label: s.label,
@@ -96,6 +99,17 @@ function toProduct(draft) {
           return { id, label: v.label.trim(), price: toPrice(v.price) }
         })
     : []
+  const usedVersionIds = new Set()
+  const versions = draft.versions
+    .filter((v) => v.label.trim())
+    .map((v) => {
+      // Se conserva el id de las versiones que ya existían (el carrito los usa).
+      let id = v.id ?? slugify(v.label)
+      while (usedVersionIds.has(id)) id = `${id}-b`
+      usedVersionIds.add(id)
+      // Si quitaron la foto del producto, la versión se queda sin foto.
+      return { id, label: v.label.trim(), image: draft.photos.includes(v.image) ? v.image : null }
+    })
   return {
     id: draft.id,
     name: draft.name.trim(),
@@ -107,6 +121,7 @@ function toProduct(draft) {
     imageFit: draft.imageFit,
     price: draft.multiSize ? null : toPrice(draft.price),
     variants,
+    versions,
     specs: draft.specs.filter((s) => s.label.trim() && s.value.trim()).map((s) => ({ label: s.label.trim(), value: s.value.trim() })),
     published: draft.published,
     ...(draft.sortOrder != null && { sortOrder: draft.sortOrder }),
@@ -575,6 +590,100 @@ function SpecsEditor({ specs, onChange }) {
   )
 }
 
+/* ---------- 4. Versiones ---------- */
+
+function VersionsEditor({ versions, photos, onChange }) {
+  const used = new Set(versions.map((v) => v.label.trim().toLowerCase()))
+  const suggestions = VERSION_SUGGESTIONS.filter((s) => !used.has(s.toLowerCase()))
+  const setVersion = (key, patch) => onChange(versions.map((v) => (v.key === key ? { ...v, ...patch } : v)))
+  const addVersion = (label = '') => onChange([...versions, { key: rowKey(), label, image: null }])
+
+  return (
+    <div>
+      {versions.length > 0 && (
+        <ul className="space-y-3">
+          {versions.map((v, i) => (
+            <li key={v.key} className="rounded-2xl bg-[#f5f6f8] p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  value={v.label}
+                  onChange={(e) => setVersion(v.key, { label: e.target.value })}
+                  placeholder="Ej: Tapa negra"
+                  aria-label={`Nombre de la versión ${i + 1}`}
+                  className="field-input font-semibold"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange(versions.filter((x) => x.key !== v.key))}
+                  aria-label={`Quitar versión ${i + 1}`}
+                  className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-muted hover:bg-[#fdecec] hover:text-[#c0392b]"
+                >
+                  <X size={18} weight="bold" />
+                </button>
+              </div>
+
+              {photos.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[13px] font-semibold text-muted">Foto que se muestra al elegirla (opcional)</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={!v.image}
+                      onClick={() => setVersion(v.key, { image: null })}
+                      className={`grid size-14 cursor-pointer place-items-center rounded-lg bg-white px-1 text-center text-[11px] leading-tight font-semibold text-muted ${
+                        !v.image ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'
+                      }`}
+                    >
+                      Sin foto
+                    </button>
+                    {photos.map((url, n) => (
+                      <button
+                        key={photoKey(url, n)}
+                        type="button"
+                        aria-pressed={v.image === url}
+                        aria-label={`Usar la foto ${n + 1} para esta versión`}
+                        onClick={() => setVersion(v.key, { image: url })}
+                        className={`size-14 cursor-pointer overflow-hidden rounded-lg bg-white ${
+                          v.image === url ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'
+                        }`}
+                      >
+                        <img src={productImageUrl(url, 480)} alt="" className="size-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className={`flex flex-wrap items-center gap-2 ${versions.length ? 'mt-4' : ''}`}>
+        <button
+          type="button"
+          onClick={() => addVersion()}
+          className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-ink px-4 text-[14px] font-semibold text-white hover:bg-black"
+        >
+          <Plus size={16} weight="bold" />
+          Agregar versión
+        </button>
+        {suggestions.length > 0 && <span className="ml-1 text-[13px] text-muted">o tocá una:</span>}
+        {suggestions.map((label) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => addVersion(label)}
+            className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-[#f5f6f8] px-3.5 text-[13px] font-semibold ring-1 ring-black/[0.08] hover:ring-black/30"
+          >
+            <Plus size={12} weight="bold" />
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ---------- Vista previa ---------- */
 
 function Preview({ product }) {
@@ -592,7 +701,7 @@ function Preview({ product }) {
       </p>
       {/* inert: es solo una muestra, no se puede tocar */}
       <div inert className="mx-auto max-w-[17rem]">
-        <ProductCard key={product.variants.map((v) => v.id).join()} product={sample} />
+        <ProductCard key={[...product.variants, ...product.versions].map((v) => v.id).join()} product={sample} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.06]">
@@ -618,6 +727,15 @@ function Preview({ product }) {
               <span key={v.id} className="rounded-lg bg-[#f5f6f8] px-2.5 py-1 text-[13px] font-semibold ring-1 ring-black/[0.06]">
                 {v.label}
                 <span className="ml-1.5 font-normal text-muted">{v.price == null ? 'a consultar' : formatPrice(v.price)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        {product.versions.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {product.versions.map((v) => (
+              <span key={v.id} className="rounded-lg bg-[#fbf7ec] px-2.5 py-1 text-[13px] font-semibold ring-1 ring-gold/40">
+                {v.label}
               </span>
             ))}
           </div>
@@ -854,11 +972,15 @@ export default function ProductEditor({ productId }) {
             </FormSection>
           </div>
 
-          <FormSection step={4} title="Características" hint="Se muestran en una tabla en la página del producto. Las que dejes vacías no aparecen.">
+          <FormSection step={4} title="Versiones" hint="Opcional. Si el mismo producto viene en distintas opciones, como tapa negra o tapa dorada. El cliente la elige en la web y aparece en su pedido.">
+            <VersionsEditor versions={draft.versions} photos={draft.photos} onChange={(versions) => update({ versions })} />
+          </FormSection>
+
+          <FormSection step={5} title="Características" hint="Se muestran en una tabla en la página del producto. Las que dejes vacías no aparecen.">
             <SpecsEditor specs={draft.specs} onChange={(specs) => update({ specs })} />
           </FormSection>
 
-          <FormSection step={5} title="Publicación">
+          <FormSection step={6} title="Publicación">
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f5f6f8] p-4">
               <div>
                 <p className="text-[16px] font-semibold">{draft.published ? 'Visible en la web' : 'Oculto'}</p>
@@ -967,7 +1089,7 @@ export default function ProductEditor({ productId }) {
         onConfirm={remove}
       >
         <strong className="font-semibold text-ink">{original?.name}</strong> se borra de la web y del panel. Si solo querés sacarlo por un tiempo, ocultalo en
-        el paso 5.
+        el paso 6.
       </ConfirmDialog>
     </div>
   )

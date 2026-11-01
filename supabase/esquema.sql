@@ -15,6 +15,7 @@ create table if not exists public.products (
   image_fit text not null default 'contain' check (image_fit in ('contain', 'cover')),
   price integer check (price >= 0),
   variants jsonb not null default '[]',
+  versions jsonb not null default '[]', -- tapa negra, tapa dorada...
   specs jsonb not null default '[]',
   published boolean not null default true,
   sort_order integer not null default 0,
@@ -37,6 +38,9 @@ create trigger products_touch before update on public.products
 alter table public.products add column if not exists gallery text[] not null default '{}';
 alter table public.products drop constraint if exists products_gallery_max;
 alter table public.products add constraint products_gallery_max check (coalesce(array_length(gallery, 1), 0) <= 9);
+
+-- Para bases creadas antes de que existieran las versiones.
+alter table public.products add column if not exists versions jsonb not null default '[]';
 
 -- 2. Administradores ---------------------------------------------------------
 -- Solo los usuarios de esta lista pueden cargar, editar o borrar productos.

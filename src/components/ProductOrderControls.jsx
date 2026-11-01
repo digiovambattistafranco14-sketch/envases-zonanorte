@@ -1,11 +1,12 @@
 import { Check, ShoppingCartSimple } from './icons.jsx'
 import { formatPrice } from '../lib/format.js'
+import { productImageUrl } from './ProductImage.jsx'
 import QuantityStepper from './QuantityStepper.jsx'
 
-// Página de producto: tamaños, precio, cantidad y botón de agregar.
+// Página de producto: tamaños, versiones, precio, cantidad y botón de agregar.
 // `order` es lo que devuelve useProductOrder(product).
 export default function ProductOrderControls({ product, order }) {
-  const { qty, setQty, variantId, setVariantId, price, added, add } = order
+  const { qty, setQty, variantId, setVariantId, versionId, setVersionId, price, added, add } = order
 
   return (
     <div>
@@ -30,6 +31,36 @@ export default function ProductOrderControls({ product, order }) {
                     onChange={() => setVariantId(v.id)}
                     className="sr-only"
                   />
+                  {v.label}
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
+
+      {product.versions?.length > 0 && (
+        <fieldset className="mb-6">
+          <legend className="text-sm font-semibold">Versión</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {product.versions.map((v) => {
+              const active = v.id === versionId
+              return (
+                <label
+                  key={v.id}
+                  className={`inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl text-[15px] font-semibold transition-colors duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-gold-ink ${
+                    v.image ? 'py-1 pr-5 pl-1' : 'px-5'
+                  } ${active ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40'}`}
+                >
+                  <input
+                    type="radio"
+                    name={`version-${product.id}`}
+                    value={v.id}
+                    checked={active}
+                    onChange={() => setVersionId(v.id)}
+                    className="sr-only"
+                  />
+                  {v.image && <img src={productImageUrl(v.image, 480)} alt="" className="size-9 rounded-lg bg-white object-cover" />}
                   {v.label}
                 </label>
               )

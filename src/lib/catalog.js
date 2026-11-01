@@ -18,6 +18,7 @@ const normalize = (p, i = 0) => ({
   published: true,
   alsoIn: [],
   variants: [],
+  versions: [], // [{ id, label, image }]: tapa negra, tapa dorada...
   specs: [],
   price: null,
   image: '',
@@ -41,6 +42,7 @@ const fromRow = (r) =>
     imageFit: r.image_fit ?? 'contain',
     price: r.price,
     variants: r.variants ?? [],
+    versions: r.versions ?? [],
     specs: r.specs ?? [],
     published: r.published,
     sortOrder: r.sort_order ?? 0,
@@ -56,6 +58,7 @@ const toRow = (p) => ({
   image_fit: p.imageFit,
   price: p.price,
   variants: p.variants,
+  versions: p.versions,
   specs: p.specs,
   published: p.published,
   sort_order: p.sortOrder,

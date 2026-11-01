@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, CaretLeft, CaretRight, MagnifyingGlassPlus } from '../components/icons.jsx'
 import PhotoLightbox from '../components/PhotoLightbox.jsx'
 import ProductImage from '../components/ProductImage.jsx'
@@ -68,12 +68,18 @@ function OtherProducts({ current }) {
 }
 
 // Foto grande + miniaturas para pasar entre las fotos del producto.
-function ProductGallery({ product }) {
+function ProductGallery({ product, focusImage }) {
   const photos = [product.image, ...(product.gallery ?? [])].filter(Boolean)
   const [index, setIndex] = useState(0)
   const [enlarged, setEnlarged] = useState(false)
   const current = photos[index] ?? product.image
   const go = (step) => setIndex((i) => (i + step + photos.length) % photos.length)
+
+  // Al elegir una versión con foto propia, se muestra esa foto.
+  useEffect(() => {
+    const found = focusImage ? photos.indexOf(focusImage) : -1
+    if (found >= 0) setIndex(found)
+  }, [focusImage])
 
   return (
     <div className="mx-auto w-full max-w-md lg:sticky lg:top-[calc(var(--header-h)+16px)] lg:max-w-none">
@@ -155,7 +161,7 @@ function ProductDetail({ product }) {
       <BackLink product={product} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-16">
-        <ProductGallery product={product} />
+        <ProductGallery product={product} focusImage={order.version?.image} />
 
         <div className="min-w-0 lg:max-w-xl lg:py-6">
           <p className="inline-flex rounded-full bg-surface px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.2em] text-gold-ink uppercase ring-1 ring-black/5">

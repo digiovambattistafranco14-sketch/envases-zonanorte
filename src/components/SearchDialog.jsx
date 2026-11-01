@@ -30,6 +30,7 @@ function search(products, query) {
           ...p.alsoIn.map(getCategoryLabel),
           p.description,
           ...p.variants.map((v) => v.label),
+          ...p.versions.map((v) => v.label),
           ...p.specs.map((s) => `${s.label} ${s.value}`),
         ].join(' '),
       )
