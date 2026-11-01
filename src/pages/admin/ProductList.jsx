@@ -3,7 +3,7 @@ import { ArrowSquareOut, Copy, Eye, EyeSlash, MagnifyingGlass, PencilSimple, Plu
 import ProductImage from '../../components/ProductImage.jsx'
 import { categories, getCategoryLabel, isInCategory } from '../../data/products.js'
 import { deleteProduct, duplicateProduct, setPublished, slugify, useAllProducts } from '../../lib/catalog.js'
-import { formatPrice } from '../../lib/format.js'
+import { formatPriceRange, priceRange } from '../../lib/pricing.js'
 import { adminHref, productHref } from '../../lib/router.js'
 import { ConfirmDialog, Segmented, Switch, useAction, useToast } from './ui.jsx'
 
@@ -15,14 +15,8 @@ const STATUS = [
 ]
 
 function priceSummary(product) {
-  const count = product.versions.length
-  const versions = count ? ` · ${count} ${count === 1 ? 'versión' : 'versiones'}` : ''
-  const prices = product.variants.map((v) => v.price).filter((p) => p != null)
-  if (product.variants.length > 0) {
-    const sizes = `${product.variants.length} ${product.variants.length === 1 ? 'tamaño' : 'tamaños'}`
-    return (prices.length ? `${sizes} · desde ${formatPrice(Math.min(...prices))}` : `${sizes} · a consultar`) + versions
-  }
-  return (product.price == null ? 'Precio a consultar' : formatPrice(product.price)) + versions
+  const groups = product.options.map((g) => g.name).join(', ')
+  return [formatPriceRange(priceRange(product)), groups].filter(Boolean).join(' · ')
 }
 
 function IconButton({ label, onClick, href, children, danger = false }) {

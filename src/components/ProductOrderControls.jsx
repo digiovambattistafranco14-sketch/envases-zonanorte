@@ -1,75 +1,84 @@
-import { Check, ShoppingCartSimple } from './icons.jsx'
+import { CaretDown, Check, ShoppingCartSimple } from './icons.jsx'
 import { formatPrice } from '../lib/format.js'
-import { productImageUrl } from './ProductImage.jsx'
+import { chosenValue, valuePrice } from '../lib/pricing.js'
 import QuantityStepper from './QuantityStepper.jsx'
 
-// Página de producto: tamaños, versiones, precio, cantidad y botón de agregar.
+const optionText = (group, value, choices) => {
+  const price = valuePrice(group, value, choices)
+  return price ? `${value.label} (+ ${formatPrice(price)})` : value.label
+}
+
+// Cómo se llega al precio: base + cada opción elegida que suma algo.
+function PriceBreakdown({ product, choices }) {
+  const parts = product.options.flatMap((group) => {
+    const value = chosenValue(group, choices)
+    const price = value && valuePrice(group, value, choices)
+    return price ? [{ label: `${group.name}: ${value.label}`, price }] : []
+  })
+  if (!parts.length) return null
+  return (
+    <dl className="mt-2 space-y-1 text-[14px] text-muted">
+      {product.price > 0 && (
+        <div className="flex justify-between gap-4">
+          <dt>Precio base</dt>
+          <dd className="tabular-nums">{formatPrice(product.price)}</dd>
+        </div>
+      )}
+      {parts.map((part) => (
+        <div key={part.label} className="flex justify-between gap-4">
+          <dt className="min-w-0">{part.label}</dt>
+          <dd className="shrink-0 tabular-nums">+ {formatPrice(part.price)}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+// Página de producto: opciones, precio, cantidad y botón de agregar.
 // `order` es lo que devuelve useProductOrder(product).
 export default function ProductOrderControls({ product, order }) {
-  const { qty, setQty, variantId, setVariantId, versionId, setVersionId, price, added, add } = order
+  const { qty, setQty, choices, choose, missing, showMissing, priceText, added, add } = order
+  const onRequest = priceText === formatPrice(null)
 
   return (
     <div>
-      {product.variants?.length > 0 && (
-        <fieldset className="mb-6">
-          <legend className="text-sm font-semibold">Tamaño</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {product.variants.map((v) => {
-              const active = v.id === variantId
-              return (
-                <label
-                  key={v.id}
-                  className={`inline-flex min-h-11 cursor-pointer items-center rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-gold-ink ${
-                    active ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`tamano-${product.id}`}
-                    value={v.id}
-                    checked={active}
-                    onChange={() => setVariantId(v.id)}
-                    className="sr-only"
-                  />
-                  {v.label}
+      {product.options.length > 0 && (
+        <div className="mb-6 space-y-4">
+          {product.options.map((group) => {
+            const id = `opcion-${product.id}-${group.id}`
+            const invalid = showMissing && !choices[group.id]
+            return (
+              <div key={group.id}>
+                <label htmlFor={id} className="text-sm font-semibold">
+                  {group.name}
                 </label>
-              )
-            })}
-          </div>
-        </fieldset>
+                <div className="relative mt-2">
+                  <select
+                    id={id}
+                    value={choices[group.id] ?? ''}
+                    onChange={(e) => choose(group, e.target.value)}
+                    aria-invalid={invalid}
+                    className={`field-input cursor-pointer appearance-none pr-11 ${invalid ? 'ring-2 ring-red-600' : ''}`}
+                  >
+                    <option value="">Elegí una opción</option>
+                    {group.values.map((value) => (
+                      <option key={value.id} value={value.id}>
+                        {optionText(group, value, choices)}
+                      </option>
+                    ))}
+                  </select>
+                  <CaretDown size={16} weight="bold" className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-muted" />
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
 
-      {product.versions?.length > 0 && (
-        <fieldset className="mb-6">
-          <legend className="text-sm font-semibold">Versión</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {product.versions.map((v) => {
-              const active = v.id === versionId
-              return (
-                <label
-                  key={v.id}
-                  className={`inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl text-[15px] font-semibold transition-colors duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-gold-ink ${
-                    v.image ? 'py-1 pr-5 pl-1' : 'px-5'
-                  } ${active ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-black/10 hover:ring-black/40'}`}
-                >
-                  <input
-                    type="radio"
-                    name={`version-${product.id}`}
-                    value={v.id}
-                    checked={active}
-                    onChange={() => setVersionId(v.id)}
-                    className="sr-only"
-                  />
-                  {v.image && <img src={productImageUrl(v.image, 480)} alt="" className="size-9 rounded-lg bg-white object-cover" />}
-                  {v.label}
-                </label>
-              )
-            })}
-          </div>
-        </fieldset>
-      )}
-
-      <p className={price == null ? 'text-[15px] text-muted' : 'text-2xl font-semibold'}>{formatPrice(price)}</p>
+      <p aria-live="polite" className={onRequest ? 'text-[15px] text-muted' : 'text-2xl font-semibold tabular-nums'}>
+        {priceText}
+      </p>
+      {!onRequest && <PriceBreakdown product={product} choices={choices} />}
 
       <div className="mt-3 flex items-center gap-3">
         <QuantityStepper value={qty} onChange={setQty} label={`Cantidad de ${product.name}`} />
@@ -78,6 +87,11 @@ export default function ProductOrderControls({ product, order }) {
           <span aria-live="polite">{added ? 'Agregado' : 'Agregar al carrito'}</span>
         </button>
       </div>
+      {showMissing && missing.length > 0 && (
+        <p role="alert" className="mt-2 text-sm font-medium text-red-700">
+          Falta elegir: {missing.map((g) => g.name).join(', ')}.
+        </p>
+      )}
     </div>
   )
 }

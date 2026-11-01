@@ -14,19 +14,27 @@ export const DEMO_MODE = !hasSupabase
 
 const STORAGE_KEY = hasSupabase ? 'efzn-catalogo-cache' : 'efzn-catalogo-v1'
 
-const normalize = (p, i = 0) => ({
+// Los productos cargados antes de las opciones tienen tamaños (variants) y
+// versiones (versions): se muestran como grupos de opciones.
+const legacyOptions = ({ variants, versions }) =>
+  [
+    { id: 'tamano', name: 'Tamaño', values: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price ?? null, image: null })) },
+    { id: 'version', name: 'Versión', values: (versions ?? []).map((v) => ({ id: v.id, label: v.label, price: null, image: v.image ?? null })) },
+  ].filter((group) => group.values.length)
+
+const normalize = ({ variants, versions, ...p }, i = 0) => ({
   published: true,
   alsoIn: [],
-  variants: [],
-  versions: [], // [{ id, label, image }]: tapa negra, tapa dorada...
   specs: [],
-  price: null,
+  price: null, // precio base: se le suma lo de cada opción elegida
   image: '',
   gallery: [], // fotos extra (además de la principal), hasta 9
   imageFit: 'contain',
   description: '',
   sortOrder: i,
   ...p,
+  // [{ id, name, values: [{ id, label, price, image }] }]: Cc, Color, Cierre...
+  options: p.options?.length ? p.options : legacyOptions({ variants, versions }),
 })
 
 // Fila de la base (snake_case) <-> producto de la web (camelCase).
@@ -41,8 +49,9 @@ const fromRow = (r) =>
     gallery: r.gallery ?? [],
     imageFit: r.image_fit ?? 'contain',
     price: r.price,
-    variants: r.variants ?? [],
-    versions: r.versions ?? [],
+    options: r.options ?? [],
+    variants: r.variants,
+    versions: r.versions,
     specs: r.specs ?? [],
     published: r.published,
     sortOrder: r.sort_order ?? 0,
@@ -57,8 +66,9 @@ const toRow = (p) => ({
   gallery: p.gallery,
   image_fit: p.imageFit,
   price: p.price,
-  variants: p.variants,
-  versions: p.versions,
+  options: p.options,
+  variants: [], // reemplazados por options
+  versions: [],
   specs: p.specs,
   published: p.published,
   sort_order: p.sortOrder,

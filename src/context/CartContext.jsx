@@ -1,25 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { getProduct, useAllProducts } from '../lib/catalog.js'
+import { chosenValue, unitPrice } from '../lib/pricing.js'
 
 const STORAGE_KEY = 'efzn-cart-v1'
 export const MAX_QTY = 99999
 
 const CartContext = createContext(null)
 
-const lineKey = (productId, variantId, versionId) => [productId, variantId, versionId].filter(Boolean).join('::')
+const lineKey = (productId, choices) => [productId, ...Object.keys(choices).sort().map((k) => choices[k])].join('::')
 export const clampQty = (n) => Math.min(MAX_QTY, Math.max(1, Math.floor(Number(n)) || 1))
 
 function reducer(items, action) {
   switch (action.type) {
     case 'add': {
-      const key = lineKey(action.productId, action.variantId, action.versionId)
+      const key = lineKey(action.productId, action.choices)
       if (items.some((i) => i.key === key)) {
         return items.map((i) => (i.key === key ? { ...i, qty: clampQty(i.qty + action.qty) } : i))
       }
-      return [
-        ...items,
-        { key, productId: action.productId, variantId: action.variantId ?? null, versionId: action.versionId ?? null, qty: clampQty(action.qty) },
-      ]
+      return [...items, { key, productId: action.productId, choices: action.choices, qty: clampQty(action.qty) }]
     }
     case 'setQty':
       return items.map((i) => (i.key === action.key ? { ...i, qty: clampQty(action.qty) } : i))
@@ -61,18 +59,21 @@ export function CartProvider({ children }) {
     const lines = items.flatMap((item) => {
       const product = catalog.find((p) => p.id === item.productId)
       if (!product) return []
-      const variant = product.variants?.find((v) => v.id === item.variantId) ?? null
-      const version = product.versions?.find((v) => v.id === item.versionId) ?? null
-      const unitPrice = variant?.price ?? product.price ?? null
+      // Los carritos guardados antes de las opciones tienen variantId y versionId.
+      const choices = item.choices ?? { tamano: item.variantId, version: item.versionId }
+      const chosen = product.options.flatMap((group) => {
+        const value = chosenValue(group, choices)
+        return value ? [{ group, value }] : []
+      })
+      const detail = chosen.map(({ group, value }) => `${group.name}: ${value.label}`).join(', ')
+      const price = unitPrice(product, choices)
       return [{
         ...item,
         product,
-        variant,
-        version,
-        image: version?.image || product.image,
-        name: [product.name, variant?.label, version && `(${version.label})`].filter(Boolean).join(' '),
-        unitPrice,
-        subtotal: unitPrice == null ? null : unitPrice * item.qty,
+        image: chosen.map(({ value }) => value.image).filter(Boolean).at(-1) || product.image,
+        name: detail ? `${product.name} (${detail})` : product.name,
+        unitPrice: price,
+        subtotal: price == null ? null : price * item.qty,
       }]
     })
     const hasUnpriced = lines.some((l) => l.subtotal == null)
@@ -84,7 +85,7 @@ export function CartProvider({ children }) {
       isOpen,
       openCart,
       closeCart,
-      addItem: (productId, variantId, qty, versionId) => dispatch({ type: 'add', productId, variantId, versionId, qty }),
+      addItem: (productId, choices, qty) => dispatch({ type: 'add', productId, choices, qty }),
       setQty: (key, qty) => dispatch({ type: 'setQty', key, qty }),
       removeItem: (key) => dispatch({ type: 'remove', key }),
       clearCart: () => dispatch({ type: 'clear' }),

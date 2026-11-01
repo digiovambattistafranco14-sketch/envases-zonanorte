@@ -3,7 +3,7 @@
 //
 // image: nombre base de la foto (sin tamaño ni extensión).
 // price: número en pesos, o null para mostrar "Precio a consultar".
-// variants: opcional. Cada variante puede tener su propio price.
+// variants: opcional. Se muestran como un grupo de opciones "Tamaño" (ver normalize en lib/catalog.js).
 // specs: características que se muestran en la vista de detalle.
 // detail: texto chico opcional que aclara qué entra en el rubro.
 // short: nombre corto (en todos lados); nav: nombre corto solo para la cabecera.

@@ -14,8 +14,9 @@ create table if not exists public.products (
   gallery text[] not null default '{}', -- fotos extra (hasta 9 además de la principal)
   image_fit text not null default 'contain' check (image_fit in ('contain', 'cover')),
   price integer check (price >= 0),
-  variants jsonb not null default '[]',
-  versions jsonb not null default '[]', -- tapa negra, tapa dorada...
+  options jsonb not null default '[]', -- grupos de opciones con precio: Cc, Color, Cierre...
+  variants jsonb not null default '[]', -- reemplazado por options
+  versions jsonb not null default '[]', -- reemplazado por options
   specs jsonb not null default '[]',
   published boolean not null default true,
   sort_order integer not null default 0,
@@ -39,7 +40,8 @@ alter table public.products add column if not exists gallery text[] not null def
 alter table public.products drop constraint if exists products_gallery_max;
 alter table public.products add constraint products_gallery_max check (coalesce(array_length(gallery, 1), 0) <= 9);
 
--- Para bases creadas antes de que existieran las versiones.
+-- Para bases creadas antes de que existieran las opciones.
+alter table public.products add column if not exists options jsonb not null default '[]';
 alter table public.products add column if not exists versions jsonb not null default '[]';
 
 -- 2. Administradores ---------------------------------------------------------

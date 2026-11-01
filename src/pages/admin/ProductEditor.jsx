@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowSquareOut, CaretLeft, CaretRight, Check, Flame, Plus, Star, Trash, UploadSimple, X } from '../../components/icons.jsx'
+import { ArrowLeft, ArrowSquareOut, CaretDown, CaretLeft, CaretRight, CaretUp, Check, Flame, Images, Plus, Star, Trash, UploadSimple, X } from '../../components/icons.jsx'
 import ProductCard from '../../components/ProductCard.jsx'
 import { productImageUrl } from '../../components/ProductImage.jsx'
 import { categories, getCategoryLabel } from '../../data/products.js'
-import { CatalogError, deleteProduct, getProduct, saveProduct, slugify, uploadImage } from '../../lib/catalog.js'
+import { CatalogError, deleteProduct, getProduct, saveProduct, uploadImage } from '../../lib/catalog.js'
 import { formatPrice } from '../../lib/format.js'
+import { formatPriceRange, priceCombos, priceRange } from '../../lib/pricing.js'
 import { adminHref, productHref } from '../../lib/router.js'
 import { jumpTo } from '../../lib/smoothScroll.js'
-import { ConfirmDialog, Field, FormSection, Segmented, Switch, useAction, useToast } from './ui.jsx'
+import { ConfirmDialog, Field, FormSection, Switch, useAction, useToast } from './ui.jsx'
 
 // Características sugeridas, con un ejemplo de valor para cada una.
 const SPEC_EXAMPLES = {
@@ -23,10 +24,12 @@ const SPEC_EXAMPLES = {
 const SPEC_SUGGESTIONS = Object.keys(SPEC_EXAMPLES)
 const DESCRIPTION_HINT = 300
 const MAX_PHOTOS = 10
-const VERSION_SUGGESTIONS = ['Tapa negra', 'Tapa dorada', 'Tapa plateada', 'Tapa blanca']
+const GROUP_SUGGESTIONS = ['Cc', 'Tamaño', 'Color', 'Cierre', 'Tapa']
 
 let rowCounter = 0
 const rowKey = () => `r${(rowCounter += 1)}`
+const newId = () => crypto.randomUUID().slice(0, 8)
+const newValue = () => ({ key: rowKey(), id: newId(), label: '', price: '', prices: {}, image: null })
 
 const onlyDigits = (value) => value.replace(/\D/g, '')
 const toPrice = (text) => (text === '' ? null : Number(text))
@@ -41,13 +44,8 @@ function toDraft(product) {
       description: '',
       photos: [],
       imageFit: 'contain',
-      multiSize: false,
       price: '',
-      variants: [
-        { key: rowKey(), label: '', price: '' },
-        { key: rowKey(), label: '', price: '' },
-      ],
-      versions: [],
+      options: [],
       specs: [
         { key: rowKey(), label: 'Material', value: '' },
         { key: rowKey(), label: 'Capacidad', value: '' },
@@ -55,7 +53,6 @@ function toDraft(product) {
       published: true,
     }
   }
-  const hasVariants = product.variants.length > 0
   return {
     id: product.id,
     name: product.name,
@@ -64,17 +61,21 @@ function toDraft(product) {
     description: product.description,
     photos: [product.image, ...product.gallery].filter(Boolean),
     imageFit: product.imageFit,
-    multiSize: hasVariants,
     price: product.price == null ? '' : String(product.price),
-    variants: hasVariants
-      ? product.variants.map((v) => ({
-          key: rowKey(),
-          id: v.id,
-          label: v.label,
-          price: v.price == null ? '' : String(v.price),
-        }))
-      : [{ key: rowKey(), label: '', price: '' }],
-    versions: product.versions.map((v) => ({ key: rowKey(), id: v.id, label: v.label, image: v.image ?? null })),
+    options: product.options.map((group) => ({
+      key: rowKey(),
+      id: group.id,
+      name: group.name,
+      dependsOn: group.dependsOn ?? [],
+      values: group.values.map((v) => ({
+        key: rowKey(),
+        id: v.id,
+        label: v.label,
+        price: v.price == null ? '' : String(v.price),
+        prices: Object.fromEntries(Object.entries(v.prices ?? {}).map(([key, price]) => [key, String(price)])),
+        image: v.image ?? null,
+      })),
+    })),
     specs: product.specs.map((s) => ({
       key: rowKey(),
       label: s.label,
@@ -87,29 +88,26 @@ function toDraft(product) {
 
 // Estado del formulario -> producto (lo que se guarda y lo que muestra la vista previa).
 function toProduct(draft) {
-  const usedIds = new Set()
-  const variants = draft.multiSize
-    ? draft.variants
+  const groups = draft.options.filter((group) => group.name.trim() && group.values.some((v) => v.label.trim()))
+  const options = groups.map((group) => {
+    const dependsOn = groups.filter((g) => g.id !== group.id && group.dependsOn.includes(g.id)).map((g) => g.id).sort()
+    const combos = priceCombos(dependsOn, groups)
+    return {
+      id: group.id,
+      name: group.name.trim(),
+      dependsOn,
+      values: group.values
         .filter((v) => v.label.trim())
-        .map((v) => {
-          // Se conserva el id de los tamaños que ya existían (el carrito los usa).
-          let id = v.id ?? slugify(v.label)
-          while (usedIds.has(id)) id = `${id}-b`
-          usedIds.add(id)
-          return { id, label: v.label.trim(), price: toPrice(v.price) }
-        })
-    : []
-  const usedVersionIds = new Set()
-  const versions = draft.versions
-    .filter((v) => v.label.trim())
-    .map((v) => {
-      // Se conserva el id de las versiones que ya existían (el carrito los usa).
-      let id = v.id ?? slugify(v.label)
-      while (usedVersionIds.has(id)) id = `${id}-b`
-      usedVersionIds.add(id)
-      // Si quitaron la foto del producto, la versión se queda sin foto.
-      return { id, label: v.label.trim(), image: draft.photos.includes(v.image) ? v.image : null }
-    })
+        .map((v) => ({
+          id: v.id,
+          label: v.label.trim(),
+          price: dependsOn.length ? null : toPrice(v.price),
+          prices: dependsOn.length ? Object.fromEntries(combos.filter((c) => v.prices[c.key]).map((c) => [c.key, Number(v.prices[c.key])])) : {},
+          // Si quitaron la foto del producto, la opción se queda sin foto.
+          image: draft.photos.includes(v.image) ? v.image : null,
+        })),
+    }
+  })
   return {
     id: draft.id,
     name: draft.name.trim(),
@@ -119,9 +117,8 @@ function toProduct(draft) {
     image: draft.photos[0] ?? '',
     gallery: draft.photos.slice(1),
     imageFit: draft.imageFit,
-    price: draft.multiSize ? null : toPrice(draft.price),
-    variants,
-    versions,
+    price: toPrice(draft.price),
+    options,
     specs: draft.specs.filter((s) => s.label.trim() && s.value.trim()).map((s) => ({ label: s.label.trim(), value: s.value.trim() })),
     published: draft.published,
     ...(draft.sortOrder != null && { sortOrder: draft.sortOrder }),
@@ -132,7 +129,13 @@ function validate(draft) {
   const errors = {}
   if (!draft.name.trim()) errors.name = 'Poné el nombre del producto.'
   if (!draft.category) errors.category = 'Elegí en qué rubro va.'
-  if (draft.multiSize && !draft.variants.some((v) => v.label.trim())) errors.variants = 'Cargá al menos un tamaño, o elegí “Un solo tamaño”.'
+  for (const group of draft.options) {
+    const name = group.name.trim()
+    const named = group.values.filter((v) => v.label.trim())
+    if (!name && named.length) errors.options = `Ponele nombre al grupo de “${named[0].label.trim()}” (por ejemplo Color o Cierre).`
+    else if (name && !named.length) errors.options = `Agregá al menos una opción en “${name}”, o quitá el grupo.`
+    else if (group.values.some((v) => v.price && !v.label.trim())) errors.options = `En “${name || 'un grupo'}” hay un precio sin el nombre de la opción.`
+  }
   return errors
 }
 
@@ -415,7 +418,7 @@ function CategoryPicker({ value, onChange, error }) {
   )
 }
 
-/* ---------- 3. Tamaños y precio ---------- */
+/* ---------- 3. Precio y opciones ---------- */
 
 function PriceInput({ id, value, onChange, placeholder = 'A consultar', label }) {
   return (
@@ -434,88 +437,322 @@ function PriceInput({ id, value, onChange, placeholder = 'A consultar', label })
   )
 }
 
-function SizesEditor({ draft, update, error }) {
-  const setVariant = (key, patch) =>
+const moveItem = (list, index, step) => {
+  const next = [...list]
+  ;[next[index], next[index + step]] = [next[index + step], next[index]]
+  return next
+}
+
+// Subir, bajar y quitar: para los grupos y para cada opción.
+function RowActions({ what, index, total, onMove, onRemove }) {
+  const button = 'grid size-9 cursor-pointer place-items-center rounded-lg text-muted hover:bg-[#e6e8ec] hover:text-ink disabled:invisible'
+  return (
+    <div className="flex shrink-0 items-center">
+      <button type="button" onClick={() => onMove(-1)} disabled={index === 0} aria-label={`Subir ${what}`} title="Subir" className={button}>
+        <CaretUp size={15} weight="bold" />
+      </button>
+      <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} aria-label={`Bajar ${what}`} title="Bajar" className={button}>
+        <CaretDown size={15} weight="bold" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Quitar ${what}`}
+        title="Quitar"
+        className="grid size-9 cursor-pointer place-items-center rounded-lg text-muted hover:bg-[#fdecec] hover:text-[#c0392b]"
+      >
+        <X size={17} weight="bold" />
+      </button>
+    </div>
+  )
+}
+
+function ValuePhotoPicker({ value, photos, onPick }) {
+  return (
+    <div className="flex flex-wrap gap-2 rounded-xl bg-white p-2 ring-1 ring-black/[0.06]">
+      <button
+        type="button"
+        aria-pressed={!value.image}
+        onClick={() => onPick(null)}
+        className={`grid size-14 cursor-pointer place-items-center rounded-lg bg-white px-1 text-center text-[11px] leading-tight font-semibold text-muted ${
+          !value.image ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'
+        }`}
+      >
+        Sin foto
+      </button>
+      {photos.map((url, n) => (
+        <button
+          key={photoKey(url, n)}
+          type="button"
+          aria-pressed={value.image === url}
+          aria-label={`Usar la foto ${n + 1} para esta opción`}
+          onClick={() => onPick(url)}
+          className={`size-14 cursor-pointer overflow-hidden rounded-lg bg-white ${value.image === url ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'}`}
+        >
+          <img src={productImageUrl(url, 480)} alt="" className="size-full object-cover" />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Al cambiar de qué depende un grupo no se pierde lo cargado: cada casilla nueva
+// arranca con el precio que tenía la combinación equivalente.
+function remapPrices(value, oldCombos, newCombos) {
+  const prices = {}
+  for (const combo of newCombos) {
+    const same = oldCombos.filter((old) => Object.keys(old.choices).every((id) => !(id in combo.choices) || combo.choices[id] === old.choices[id]))
+    const previous = oldCombos.length ? same.map((old) => value.prices[old.key]).find(Boolean) : value.price || '0' // sin precio fijo no sumaba nada
+    if (previous) prices[combo.key] = previous
+  }
+  return prices
+}
+
+// Una fila por opción y una columna por cada combinación de la que depende.
+function PriceTable({ values, combos, groupName, onCell }) {
+  const empty = values.length * combos.length - values.reduce((sum, v) => sum + combos.filter((c) => v.prices[c.key]).length, 0)
+  return (
+    <div className="mt-3">
+      <p className="text-[13px] font-semibold text-muted">Cuánto suma cada opción de {groupName}</p>
+      <div data-lenis-prevent className="mt-1.5 overflow-x-auto rounded-xl bg-white p-2 ring-1 ring-black/[0.06]">
+        <table className="w-full border-separate border-spacing-1 text-[13px]">
+          <thead>
+            <tr>
+              <td className="sticky left-0 z-10 bg-white" />
+              {combos.map((combo) => (
+                <th key={combo.key} scope="col" className="min-w-32 px-1 text-left font-semibold">
+                  {combo.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {values.map((v) => (
+              <tr key={v.key}>
+                <th scope="row" className="sticky left-0 z-10 max-w-28 bg-white pr-2 text-left leading-snug font-semibold">
+                  {v.label.trim()}
+                </th>
+                {combos.map((combo) => (
+                  <td key={combo.key}>
+                    <PriceInput value={v.prices[combo.key] ?? ''} onChange={(price) => onCell(v.key, combo.key, price)} placeholder="A consultar" label={`Cuánto suma ${v.label.trim()} con ${combo.label}`} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+        {empty > 0 ? `${empty === 1 ? 'Falta 1 precio' : `Faltan ${empty} precios`}: esas combinaciones van a decir “Precio a consultar”. Si una no suma nada, poné 0.` : 'Todas las combinaciones tienen precio.'}
+      </p>
+    </div>
+  )
+}
+
+function OptionGroup({ group, groups, index, total, photos, onChange, onMove, onRemove }) {
+  const [photoRow, setPhotoRow] = useState(null) // opción con el selector de foto abierto
+  const setValues = (values) => onChange({ values })
+  const setValue = (key, patch) => setValues(group.values.map((v) => (v.key === key ? { ...v, ...patch } : v)))
+  const addValue = () => setValues([...group.values, newValue()])
+  const groupName = group.name.trim() || `grupo ${index + 1}`
+  const dependsOn = groups.filter((g) => group.dependsOn.includes(g.id)).map((g) => g.id)
+  const combos = priceCombos(dependsOn, groups)
+  const linked = dependsOn.length > 0
+  const named = group.values.filter((v) => v.label.trim())
+  // No se ofrece un grupo que ya depende de este: se pisarían entre los dos.
+  const others = groups.filter((g) => g.id !== group.id && g.name.trim() && !g.dependsOn.includes(group.id))
+  const toggleDependency = (id) => {
+    const next = dependsOn.includes(id) ? dependsOn.filter((x) => x !== id) : [...dependsOn, id]
+    const nextCombos = priceCombos(next, groups)
+    onChange({ dependsOn: next, values: group.values.map((v) => ({ ...v, prices: remapPrices(v, linked ? combos : [], nextCombos) })) })
+  }
+
+  return (
+    <li className="rounded-2xl bg-[#f5f6f8] p-3 sm:p-4">
+      <div className="flex items-center gap-2">
+        <input
+          value={group.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          placeholder="Nombre del grupo. Ej: Color"
+          aria-label={`Nombre del grupo ${index + 1}`}
+          className="field-input min-w-0 font-semibold"
+        />
+        <RowActions what={`el grupo ${groupName}`} index={index} total={total} onMove={onMove} onRemove={onRemove} />
+      </div>
+
+      {others.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[13px] font-semibold text-muted">¿El precio de {groupName} cambia según otra elección? Tocá de cuál (opcional):</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {others.map((other) => {
+              const on = dependsOn.includes(other.id)
+              return (
+                <button
+                  key={other.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleDependency(other.id)}
+                  className={`inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full px-3.5 text-[13px] font-semibold ${
+                    on ? 'bg-ink text-white' : 'bg-white ring-1 ring-black/10 hover:ring-black/30'
+                  }`}
+                >
+                  {on ? <Check size={12} weight="bold" /> : <Plus size={12} weight="bold" />}
+                  Según {other.name.trim()}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {!linked && (
+        <div className="mt-3 hidden grid-cols-[minmax(0,1fr)_11rem_9.5rem] gap-2 px-1 pb-1.5 text-[13px] font-semibold text-muted sm:grid">
+          <span>Opción</span>
+          <span>Cuánto suma al precio</span>
+        </div>
+      )}
+      <ul className={`mt-3 space-y-3 sm:space-y-2 ${linked ? '' : 'sm:mt-0'}`}>
+        {group.values.map((v, i) => {
+          const what = `la opción ${v.label.trim() || i + 1} de ${groupName}`
+          return (
+            <li key={v.key}>
+              <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 ${linked ? '' : 'sm:grid-cols-[minmax(0,1fr)_11rem_auto]'}`}>
+                <input
+                  value={v.label}
+                  onChange={(e) => setValue(v.key, { label: e.target.value })}
+                  placeholder="Ej: Ámbar"
+                  aria-label={`Nombre de la opción ${i + 1} de ${groupName}`}
+                  className={`field-input ${linked ? '' : 'col-span-2 sm:col-span-1'}`}
+                />
+                {!linked && <PriceInput value={v.price} onChange={(price) => setValue(v.key, { price })} placeholder="No suma" label={`Cuánto suma ${what}`} />}
+                <div className="flex items-center">
+                  {photos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoRow(photoRow === v.key ? null : v.key)}
+                      aria-expanded={photoRow === v.key}
+                      aria-label={`Elegir foto para ${what}`}
+                      title="Foto de esta opción"
+                      className={`grid size-9 cursor-pointer place-items-center overflow-hidden rounded-lg text-muted hover:bg-[#e6e8ec] hover:text-ink ${photoRow === v.key ? 'ring-2 ring-gold' : ''}`}
+                    >
+                      {v.image && photos.includes(v.image) ? <img src={productImageUrl(v.image, 480)} alt="" className="size-full bg-white object-cover" /> : <Images size={18} />}
+                    </button>
+                  )}
+                  <RowActions
+                    what={what}
+                    index={i}
+                    total={group.values.length}
+                    onMove={(step) => setValues(moveItem(group.values, i, step))}
+                    onRemove={() => setValues(group.values.filter((x) => x.key !== v.key))}
+                  />
+                </div>
+              </div>
+              {photoRow === v.key && (
+                <div className="mt-2">
+                  <p className="mb-1.5 text-[13px] font-semibold text-muted">Foto que se muestra al elegirla (opcional)</p>
+                  <ValuePhotoPicker value={v} photos={photos} onPick={(image) => setValue(v.key, { image })} />
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+
+      {linked && combos.length > 0 && named.length > 0 && (
+        <PriceTable
+          values={named}
+          combos={combos}
+          groupName={groupName}
+          onCell={(key, combo, price) => setValues(group.values.map((v) => (v.key === key ? { ...v, prices: { ...v.prices, [combo]: price } } : v)))}
+        />
+      )}
+
+      <button
+        type="button"
+        onClick={addValue}
+        className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold ring-1 ring-black/10 hover:ring-black/30"
+      >
+        <Plus size={15} weight="bold" />
+        Agregar opción
+      </button>
+    </li>
+  )
+}
+
+function OptionsEditor({ draft, product, update, error }) {
+  const groups = draft.options
+  const used = new Set(groups.map((g) => g.name.trim().toLowerCase()))
+  const suggestions = GROUP_SUGGESTIONS.filter((s) => !used.has(s.toLowerCase()))
+  const setGroup = (key, patch) => update({ options: groups.map((g) => (g.key === key ? { ...g, ...patch } : g)) })
+  const addGroup = (name = '') =>
     update({
-      variants: draft.variants.map((v) => (v.key === key ? { ...v, ...patch } : v)),
+      options: [
+        ...groups,
+        { key: rowKey(), id: newId(), name, dependsOn: [], values: [newValue(), newValue()] },
+      ],
     })
 
   return (
     <div className="space-y-5">
-      <Segmented
-        label="Tamaños"
-        stretch
-        value={draft.multiSize ? 'multi' : 'single'}
-        onChange={(v) => update({ multiSize: v === 'multi' })}
-        options={[
-          { value: 'single', label: 'Un solo tamaño' },
-          { value: 'multi', label: 'Varios tamaños' },
-        ]}
-      />
+      <Field label="Precio base" htmlFor="precio" hint="Lo que sale el producto solo. Si el precio sale todo de las opciones, dejalo vacío. Si nada tiene precio, la web dice “Precio a consultar”.">
+        <div className="max-w-xs">
+          <PriceInput id="precio" value={draft.price} onChange={(price) => update({ price })} placeholder="Sin precio base" />
+        </div>
+      </Field>
 
-      {draft.multiSize ? (
-        <div>
-          <div className="hidden grid-cols-[1fr_1fr_2.75rem] gap-2 px-1 pb-2 text-[13px] font-semibold text-muted sm:grid">
-            <span>Tamaño</span>
-            <span>Precio (opcional)</span>
-          </div>
-          <ul className="space-y-2">
-            {draft.variants.map((v, i) => (
-              <li
-                key={v.key}
-                className="grid grid-cols-[1fr_2.75rem] gap-2 rounded-xl bg-[#f5f6f8] p-2 sm:grid-cols-[1fr_1fr_2.75rem] sm:bg-transparent sm:p-0"
-              >
-                <input
-                  value={v.label}
-                  onChange={(e) => setVariant(v.key, { label: e.target.value })}
-                  placeholder={i === 0 ? 'Ej: 250 cc' : 'Ej: 500 cc'}
-                  aria-label={`Tamaño ${i + 1}`}
-                  className="field-input"
-                />
-                <div className="col-start-1 row-start-2 sm:col-start-auto sm:row-start-auto">
-                  <PriceInput value={v.price} onChange={(price) => setVariant(v.key, { price })} label={`Precio del tamaño ${i + 1}`} />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    update({
-                      variants: draft.variants.filter((x) => x.key !== v.key),
-                    })
-                  }
-                  disabled={draft.variants.length === 1}
-                  aria-label={`Quitar tamaño ${i + 1}`}
-                  className="grid size-11 cursor-pointer place-items-center self-center rounded-xl text-muted hover:bg-[#fdecec] hover:text-[#c0392b] disabled:invisible"
-                >
-                  <X size={18} weight="bold" />
-                </button>
-              </li>
+      <div>
+        <p className="text-[15px] font-semibold">Opciones que elige el cliente</p>
+        <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+          Creá los grupos que quieras, por ejemplo Cc, Color y Cierre. Cada grupo es una lista desplegable en la web y el cliente tiene que elegir una opción de cada uno.
+        </p>
+
+        {groups.length > 0 && (
+          <ul className="mt-3 space-y-3">
+            {groups.map((group, i) => (
+              <OptionGroup
+                key={group.key}
+                group={group}
+                groups={groups}
+                index={i}
+                total={groups.length}
+                photos={draft.photos}
+                onChange={(patch) => setGroup(group.key, patch)}
+                onMove={(step) => update({ options: moveItem(groups, i, step) })}
+                onRemove={() => update({ options: groups.filter((g) => g.key !== group.key) })}
+              />
             ))}
           </ul>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() =>
-              update({
-                variants: [...draft.variants, { key: rowKey(), label: '', price: '' }],
-              })
-            }
-            className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-4 text-[14px] font-semibold ring-1 ring-black/10 hover:bg-[#f5f6f8]"
+            onClick={() => addGroup()}
+            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-ink px-4 text-[14px] font-semibold text-white hover:bg-black"
           >
             <Plus size={16} weight="bold" />
-            Agregar tamaño
+            Agregar grupo
           </button>
-          {error ? (
-            <p className="mt-2 text-[14px] font-medium text-[#c0392b]">{error}</p>
-          ) : (
-            <p className="mt-3 text-[13px] text-muted">El cliente elige el tamaño en la web. Si dejás el precio vacío dice “Precio a consultar”.</p>
-          )}
+          {suggestions.length > 0 && <span className="ml-1 text-[13px] text-muted">o tocá uno:</span>}
+          {suggestions.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => addGroup(name)}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-[#f5f6f8] px-3.5 text-[13px] font-semibold ring-1 ring-black/[0.08] hover:ring-black/30"
+            >
+              <Plus size={12} weight="bold" />
+              {name}
+            </button>
+          ))}
         </div>
-      ) : (
-        <Field label="Precio" htmlFor="precio" hint="Si lo dejás vacío, en la web dice “Precio a consultar”.">
-          <div className="max-w-xs">
-            <PriceInput id="precio" value={draft.price} onChange={(price) => update({ price })} />
-          </div>
-        </Field>
-      )}
+        {error && <p className="mt-2 text-[14px] font-medium text-[#c0392b]">{error}</p>}
+      </div>
+
+      <p className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-xl bg-[#fbf7ec] px-4 py-3 ring-1 ring-gold/40">
+        <span className="text-[14px] font-semibold">Precio que se ve en la web</span>
+        <span className="font-semibold tabular-nums">{formatPriceRange(priceRange(product))}</span>
+      </p>
     </div>
   )
 }
@@ -590,100 +827,6 @@ function SpecsEditor({ specs, onChange }) {
   )
 }
 
-/* ---------- 4. Versiones ---------- */
-
-function VersionsEditor({ versions, photos, onChange }) {
-  const used = new Set(versions.map((v) => v.label.trim().toLowerCase()))
-  const suggestions = VERSION_SUGGESTIONS.filter((s) => !used.has(s.toLowerCase()))
-  const setVersion = (key, patch) => onChange(versions.map((v) => (v.key === key ? { ...v, ...patch } : v)))
-  const addVersion = (label = '') => onChange([...versions, { key: rowKey(), label, image: null }])
-
-  return (
-    <div>
-      {versions.length > 0 && (
-        <ul className="space-y-3">
-          {versions.map((v, i) => (
-            <li key={v.key} className="rounded-2xl bg-[#f5f6f8] p-3">
-              <div className="flex items-center gap-2">
-                <input
-                  value={v.label}
-                  onChange={(e) => setVersion(v.key, { label: e.target.value })}
-                  placeholder="Ej: Tapa negra"
-                  aria-label={`Nombre de la versión ${i + 1}`}
-                  className="field-input font-semibold"
-                />
-                <button
-                  type="button"
-                  onClick={() => onChange(versions.filter((x) => x.key !== v.key))}
-                  aria-label={`Quitar versión ${i + 1}`}
-                  className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-muted hover:bg-[#fdecec] hover:text-[#c0392b]"
-                >
-                  <X size={18} weight="bold" />
-                </button>
-              </div>
-
-              {photos.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-[13px] font-semibold text-muted">Foto que se muestra al elegirla (opcional)</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-pressed={!v.image}
-                      onClick={() => setVersion(v.key, { image: null })}
-                      className={`grid size-14 cursor-pointer place-items-center rounded-lg bg-white px-1 text-center text-[11px] leading-tight font-semibold text-muted ${
-                        !v.image ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'
-                      }`}
-                    >
-                      Sin foto
-                    </button>
-                    {photos.map((url, n) => (
-                      <button
-                        key={photoKey(url, n)}
-                        type="button"
-                        aria-pressed={v.image === url}
-                        aria-label={`Usar la foto ${n + 1} para esta versión`}
-                        onClick={() => setVersion(v.key, { image: url })}
-                        className={`size-14 cursor-pointer overflow-hidden rounded-lg bg-white ${
-                          v.image === url ? 'ring-2 ring-gold' : 'ring-1 ring-black/10 hover:ring-black/30'
-                        }`}
-                      >
-                        <img src={productImageUrl(url, 480)} alt="" className="size-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className={`flex flex-wrap items-center gap-2 ${versions.length ? 'mt-4' : ''}`}>
-        <button
-          type="button"
-          onClick={() => addVersion()}
-          className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-ink px-4 text-[14px] font-semibold text-white hover:bg-black"
-        >
-          <Plus size={16} weight="bold" />
-          Agregar versión
-        </button>
-        {suggestions.length > 0 && <span className="ml-1 text-[13px] text-muted">o tocá una:</span>}
-        {suggestions.map((label) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => addVersion(label)}
-            className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-[#f5f6f8] px-3.5 text-[13px] font-semibold ring-1 ring-black/[0.08] hover:ring-black/30"
-          >
-            <Plus size={12} weight="bold" />
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 /* ---------- Vista previa ---------- */
 
 function Preview({ product }) {
@@ -701,7 +844,7 @@ function Preview({ product }) {
       </p>
       {/* inert: es solo una muestra, no se puede tocar */}
       <div inert className="mx-auto max-w-[17rem]">
-        <ProductCard key={[...product.variants, ...product.versions].map((v) => v.id).join()} product={sample} />
+        <ProductCard key={product.options.flatMap((g) => g.values).map((v) => v.id).join()} product={sample} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.06]">
@@ -721,25 +864,22 @@ function Preview({ product }) {
         <p className={`mt-2 line-clamp-4 text-[14px] leading-relaxed ${product.description ? 'text-ink' : 'text-muted italic'}`}>
           {product.description || 'Acá va la descripción.'}
         </p>
-        {product.variants.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {product.variants.map((v) => (
-              <span key={v.id} className="rounded-lg bg-[#f5f6f8] px-2.5 py-1 text-[13px] font-semibold ring-1 ring-black/[0.06]">
-                {v.label}
-                <span className="ml-1.5 font-normal text-muted">{v.price == null ? 'a consultar' : formatPrice(v.price)}</span>
-              </span>
-            ))}
+        {product.options.map((group) => (
+          <div key={group.id} className="mt-3">
+            <p className="text-[13px] font-semibold">
+              {group.name}
+              {group.dependsOn.length > 0 && <span className="ml-1.5 font-normal text-muted">precio según lo elegido</span>}
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {group.values.map((v) => (
+                <span key={v.id} className="rounded-lg bg-[#f5f6f8] px-2.5 py-1 text-[13px] font-semibold ring-1 ring-black/[0.06]">
+                  {v.label}
+                  {v.price > 0 && <span className="ml-1.5 font-normal text-muted">+ {formatPrice(v.price)}</span>}
+                </span>
+              ))}
+            </div>
           </div>
-        )}
-        {product.versions.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {product.versions.map((v) => (
-              <span key={v.id} className="rounded-lg bg-[#fbf7ec] px-2.5 py-1 text-[13px] font-semibold ring-1 ring-gold/40">
-                {v.label}
-              </span>
-            ))}
-          </div>
-        )}
+        ))}
         {product.specs.length > 0 && (
           <dl className="mt-3 divide-y divide-black/[0.07] border-t border-black/[0.07] text-[13px]">
             {product.specs.map((s, i) => (
@@ -875,7 +1015,7 @@ export default function ProductEditor({ productId }) {
         {isNew ? 'Completá los pasos. A la derecha vas viendo cómo queda.' : `Rubro: ${getCategoryLabel(original.category)}`}
       </p>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-5">
           <FormSection step={1} title="Fotos" hint="Hasta 10 fotos. La principal se ve en el catálogo; en la página del producto se ven todas.">
             <PhotosPicker
@@ -966,21 +1106,17 @@ export default function ProductEditor({ productId }) {
             </div>
           </FormSection>
 
-          <div id="campo-variants">
-            <FormSection step={3} title="Tamaños y precio" hint="¿Viene en un solo tamaño o en varios (por ejemplo 250 cc y 500 cc)?">
-              <SizesEditor draft={draft} update={update} error={errors.variants} />
+          <div id="campo-options">
+            <FormSection step={3} title="Precio y opciones" hint="El precio final es la suma: precio base + lo que sale cada opción que elija el cliente.">
+              <OptionsEditor draft={draft} product={product} update={update} error={errors.options} />
             </FormSection>
           </div>
 
-          <FormSection step={4} title="Versiones" hint="Opcional. Si el mismo producto viene en distintas opciones, como tapa negra o tapa dorada. El cliente la elige en la web y aparece en su pedido.">
-            <VersionsEditor versions={draft.versions} photos={draft.photos} onChange={(versions) => update({ versions })} />
-          </FormSection>
-
-          <FormSection step={5} title="Características" hint="Se muestran en una tabla en la página del producto. Las que dejes vacías no aparecen.">
+          <FormSection step={4} title="Características" hint="Se muestran en una tabla en la página del producto. Las que dejes vacías no aparecen.">
             <SpecsEditor specs={draft.specs} onChange={(specs) => update({ specs })} />
           </FormSection>
 
-          <FormSection step={6} title="Publicación">
+          <FormSection step={5} title="Publicación">
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f5f6f8] p-4">
               <div>
                 <p className="text-[16px] font-semibold">{draft.published ? 'Visible en la web' : 'Oculto'}</p>
@@ -1089,7 +1225,7 @@ export default function ProductEditor({ productId }) {
         onConfirm={remove}
       >
         <strong className="font-semibold text-ink">{original?.name}</strong> se borra de la web y del panel. Si solo querés sacarlo por un tiempo, ocultalo en
-        el paso 6.
+        el paso 5.
       </ConfirmDialog>
     </div>
   )

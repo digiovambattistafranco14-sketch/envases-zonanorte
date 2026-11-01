@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Plus } from './icons.jsx'
 import { getCategoryLabel } from '../data/products.js'
 import { useProductOrder } from '../hooks/useProductOrder.js'
-import { formatPrice } from '../lib/format.js'
+import { formatPriceRange, priceRange } from '../lib/pricing.js'
 import { productHref } from '../lib/router.js'
 import ProductImage from './ProductImage.jsx'
 import QuantityStepper from './QuantityStepper.jsx'
@@ -9,11 +9,9 @@ import QuantityStepper from './QuantityStepper.jsx'
 // Tarjeta de producto: foto, rubro, nombre, precio y botón. La descripción
 // completa está en la página del producto. En celular los controles se apilan.
 export default function ProductCard({ product }) {
-  const { qty, setQty, price, added, add } = useProductOrder(product)
+  const { qty, setQty, added, add } = useProductOrder(product)
   const href = productHref(product.id)
-  const sizes = Boolean(product.variants?.length)
-  const versions = Boolean(product.versions?.length)
-  const hasVariants = sizes || versions // hay que elegir antes de agregar
+  const hasOptions = product.options.length > 0 // hay que elegir antes de agregar
 
   return (
     <article className="card-shell group flex h-full flex-col overflow-hidden transition-shadow duration-500 ease-out-soft hover:shadow-card-hover">
@@ -39,13 +37,13 @@ export default function ProductCard({ product }) {
         </h3>
 
         <div className="mt-auto pt-3 sm:pt-5">
-          <p className="text-[14px] text-muted sm:text-[16px]">{formatPrice(price)}</p>
-          {hasVariants ? (
+          <p className="text-[14px] text-muted sm:text-[16px]">{formatPriceRange(priceRange(product))}</p>
+          {hasOptions ? (
             <a
               href={href}
               className="btn btn-primary group mt-2.5 w-full max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] max-sm:tracking-[0.05em] sm:mt-3 sm:justify-between sm:pl-6 sm:text-[14px]"
             >
-              {sizes && versions ? 'Elegir opciones' : sizes ? 'Elegir tamaño' : 'Elegir versión'}
+              Elegir opciones
               <span className="btn-chip max-sm:hidden">
                 <ArrowRight size={15} weight="bold" />
               </span>

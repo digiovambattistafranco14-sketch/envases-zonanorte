@@ -14,9 +14,11 @@ const plain = (text) =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
 
+const optionLabels = (product) => product.options.flatMap((group) => group.values.map((v) => v.label))
+
 const SUGGESTIONS = ['Frasco', 'Pote', 'Difusor', 'Ámbar', 'Vidrio', 'Tapa']
 
-// Busca en el nombre, los rubros, la descripción, los tamaños y las
+// Busca en el nombre, los rubros, la descripción, las opciones y las
 // características. Primero los que coinciden en el nombre.
 function search(products, query) {
   const words = plain(query).split(/\s+/).filter(Boolean)
@@ -29,8 +31,7 @@ function search(products, query) {
           getCategoryLabel(p.category),
           ...p.alsoIn.map(getCategoryLabel),
           p.description,
-          ...p.variants.map((v) => v.label),
-          ...p.versions.map((v) => v.label),
+          ...optionLabels(p),
           ...p.specs.map((s) => `${s.label} ${s.value}`),
         ].join(' '),
       )
@@ -188,8 +189,8 @@ export default function SearchDialog({ open, onClose }) {
                       <span className="min-w-0 flex-1">
                         <span className="block text-[12px] font-bold tracking-[0.14em] text-gold-ink uppercase">{getCategoryLabel(product.category)}</span>
                         <span className="mt-0.5 block truncate text-[16px] font-semibold">{product.name}</span>
-                        {product.variants.length > 0 && (
-                          <span className="mt-0.5 block truncate text-[13px] text-muted">{product.variants.map((v) => v.label).join(' · ')}</span>
+                        {product.options.length > 0 && (
+                          <span className="mt-0.5 block truncate text-[13px] text-muted">{optionLabels(product).join(' · ')}</span>
                         )}
                       </span>
                       <ArrowRight size={18} className={`shrink-0 transition-opacity ${i === active ? 'opacity-100' : 'opacity-0'}`} />

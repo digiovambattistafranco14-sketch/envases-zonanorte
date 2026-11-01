@@ -75,7 +75,7 @@ function ProductGallery({ product, focusImage }) {
   const current = photos[index] ?? product.image
   const go = (step) => setIndex((i) => (i + step + photos.length) % photos.length)
 
-  // Al elegir una versión con foto propia, se muestra esa foto.
+  // Al elegir una opción con foto propia, se muestra esa foto.
   useEffect(() => {
     const found = focusImage ? photos.indexOf(focusImage) : -1
     if (found >= 0) setIndex(found)
@@ -161,7 +161,7 @@ function ProductDetail({ product }) {
       <BackLink product={product} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-16">
-        <ProductGallery product={product} focusImage={order.version?.image} />
+        <ProductGallery product={product} focusImage={order.focusImage} />
 
         <div className="min-w-0 lg:max-w-xl lg:py-6">
           <p className="inline-flex rounded-full bg-surface px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.2em] text-gold-ink uppercase ring-1 ring-black/5">
@@ -170,7 +170,7 @@ function ProductDetail({ product }) {
           <h1 className="mt-5 font-display text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-5xl">
             {product.name}
           </h1>
-          <p className="mt-5 max-w-[50ch] text-lg leading-relaxed text-muted">{product.description}</p>
+          <p className="mt-5 max-w-[50ch] text-lg leading-relaxed whitespace-pre-line text-muted">{product.description}</p>
 
           <div className="card-shell mt-8">
             <div className="p-4 sm:p-5">
