@@ -37,8 +37,9 @@ function PriceBreakdown({ product, choices }) {
 // Página de producto: opciones, precio, cantidad y botón de agregar.
 // `order` es lo que devuelve useProductOrder(product).
 export default function ProductOrderControls({ product, order }) {
-  const { qty, setQty, choices, choose, missing, showMissing, priceText, added, add } = order
+  const { qty, setQty, choices, choose, missing, showMissing, priceText, unit, added, add } = order
   const onRequest = priceText === formatPrice(null)
+  const showTotal = unit != null && qty > 1
 
   return (
     <div>
@@ -76,9 +77,14 @@ export default function ProductOrderControls({ product, order }) {
       )}
 
       <p aria-live="polite" className={onRequest ? 'text-[15px] text-muted' : 'text-2xl font-semibold tabular-nums'}>
-        {priceText}
+        {showTotal ? formatPrice(unit * qty) : priceText}
       </p>
       {!onRequest && <PriceBreakdown product={product} choices={choices} />}
+      {showTotal && (
+        <p className="mt-1 text-[14px] font-medium text-muted tabular-nums">
+          {qty.toLocaleString('es-AR')} unidades x {formatPrice(unit)} c/u
+        </p>
+      )}
 
       <div className="mt-3 flex items-center gap-3">
         <QuantityStepper value={qty} onChange={setQty} label={`Cantidad de ${product.name}`} />

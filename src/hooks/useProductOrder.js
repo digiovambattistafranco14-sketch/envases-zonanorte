@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useCart } from '../context/CartContext.jsx'
-import { formatPriceRange, priceRange } from '../lib/pricing.js'
+import { formatPriceRange, priceRange, unitPrice } from '../lib/pricing.js'
 
 // Si un grupo tiene una sola opción no hay nada que elegir: ya viene elegida.
 const initialChoices = (product) => Object.fromEntries(product.options.filter((g) => g.values.length === 1).map((g) => [g.id, g.values[0].id]))
@@ -17,6 +17,7 @@ export function useProductOrder(product) {
 
   const missing = product.options.filter((g) => !choices[g.id])
   const priceText = formatPriceRange(priceRange(product, choices))
+  const unit = missing.length ? null : unitPrice(product, choices)
 
   // Confirmación breve en el botón después de agregar.
   useEffect(() => {
@@ -42,5 +43,5 @@ export function useProductOrder(product) {
     setQty(1)
   }
 
-  return { qty, setQty, choices, choose, missing, showMissing, focusImage, priceText, added, add }
+  return { qty, setQty, choices, choose, missing, showMissing, focusImage, priceText, unit, added, add }
 }

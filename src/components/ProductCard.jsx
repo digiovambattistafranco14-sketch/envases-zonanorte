@@ -1,6 +1,7 @@
 import { ArrowRight, Check, Plus } from './icons.jsx'
 import { getCategoryLabel } from '../data/products.js'
 import { useProductOrder } from '../hooks/useProductOrder.js'
+import { formatPrice } from '../lib/format.js'
 import { formatPriceRange, priceRange } from '../lib/pricing.js'
 import { productHref } from '../lib/router.js'
 import ProductImage from './ProductImage.jsx'
@@ -9,7 +10,7 @@ import QuantityStepper from './QuantityStepper.jsx'
 // Tarjeta de producto: foto, rubro, nombre, precio y botón. La descripción
 // completa está en la página del producto. En celular los controles se apilan.
 export default function ProductCard({ product }) {
-  const { qty, setQty, added, add } = useProductOrder(product)
+  const { qty, setQty, unit, added, add } = useProductOrder(product)
   const href = productHref(product.id)
   const hasOptions = product.options.length > 0 // hay que elegir antes de agregar
 
@@ -37,7 +38,7 @@ export default function ProductCard({ product }) {
         </h3>
 
         <div className="mt-auto pt-3 sm:pt-5">
-          <p className="text-[14px] text-muted sm:text-[16px]">{formatPriceRange(priceRange(product))}</p>
+          <p className="text-[14px] text-muted sm:text-[16px]">{unit != null && qty > 1 ? `${formatPrice(unit * qty)} (${qty.toLocaleString('es-AR')} x ${formatPrice(unit)})` : formatPriceRange(priceRange(product))}</p>
           {hasOptions ? (
             <a
               href={href}
