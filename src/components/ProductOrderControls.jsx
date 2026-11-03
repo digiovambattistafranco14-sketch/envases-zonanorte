@@ -82,7 +82,7 @@ export default function ProductOrderControls({ product, order }) {
       {!onRequest && <PriceBreakdown product={product} choices={choices} />}
       {showTotal && (
         <p className="mt-1 text-[14px] font-medium text-muted tabular-nums">
-          {qty.toLocaleString('es-AR')} unidades x {formatPrice(unit)} c/u
+          {qty.toLocaleString('es-AR')} x {formatPrice(unit)}
         </p>
       )}
 
