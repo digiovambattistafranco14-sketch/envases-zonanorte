@@ -108,7 +108,7 @@ export default function ContactForm() {
           >
             <span className="inline-flex items-center gap-2 whitespace-nowrap">
               <Storefront size={17} className="text-gold-light" />
-              Local <span className="font-semibold text-on-panel">{site.location.address}</span>
+              Depósito - Showroom <span className="font-semibold text-on-panel">{site.location.address}</span>
             </span>
             <span className="inline-flex items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-gold-light">
               Cómo llegar
