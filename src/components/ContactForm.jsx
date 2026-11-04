@@ -108,8 +108,10 @@ export default function ContactForm() {
           >
             <span className="inline-flex items-center gap-2 whitespace-nowrap">
               <Storefront size={17} className="text-gold-light" />
-              Depósito - Showroom <span className="font-semibold text-on-panel">{site.location.address}</span>
+              Depósito - Showroom
             </span>
+            {/* Si no entra en la misma línea, la dirección baja entera */}
+            <span className="font-semibold whitespace-nowrap text-on-panel">{site.location.address}</span>
             <span className="inline-flex items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-gold-light">
               Cómo llegar
               <ArrowRight size={13} weight="bold" className="transition-transform duration-300 ease-out-soft group-hover/local:translate-x-1" />
