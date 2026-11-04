@@ -1,8 +1,10 @@
 import { ArrowRight, CaretRight, ChatsCircle, FacebookLogo, InstagramLogo, MapPin, Storefront, Truck, WhatsappLogo } from './icons.jsx'
+import { useCallback, useState } from 'react'
 import { site } from '../config/site.js'
 import { categories } from '../data/products.js'
 import { setCatalogCategory } from '../lib/catalogFilter.js'
 import { contactUrl, whatsappUrl } from '../lib/whatsapp.js'
+import EmailMenu from './EmailMenu.jsx'
 import LocationMap from './LocationMap.jsx'
 import LogoSeal from './LogoSeal.jsx'
 import Reveal from './Reveal.jsx'
@@ -17,9 +19,9 @@ const external = { target: '_blank', rel: 'noopener noreferrer' }
 // Dato de contacto que se puede tocar: el ícono va en un círculo que se
 // enciende en dorado, el texto se corre un poco y aparece una flecha. En
 // celular (sin mouse) la flecha se ve siempre y el toque achica la fila.
-function ContactLink({ href, icon: Icon, children, ...rest }) {
+function ContactLink({ href, icon: Icon, children, as: Tag = 'a', ...rest }) {
   return (
-    <a href={href} {...rest} className="footer-link group/link -mx-1.5 flex min-h-10 items-center gap-2.5 rounded-xl px-1.5">
+    <Tag href={href} {...rest} className="footer-link group/link -mx-1.5 flex min-h-10 cursor-pointer items-center gap-2.5 rounded-xl px-1.5 text-left">
       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/[0.06] text-gold-light ring-1 ring-gold/30 transition-colors duration-300 group-hover/link:bg-gold group-hover/link:text-on-gold">
         <Icon size={16} />
       </span>
@@ -31,7 +33,21 @@ function ContactLink({ href, icon: Icon, children, ...rest }) {
         weight="bold"
         className="nudge shrink-0 text-gold-light/70 transition-[opacity,translate] duration-300 ease-out-soft can-hover:-translate-x-1 can-hover:opacity-0 can-hover:group-hover/link:translate-x-0 can-hover:group-hover/link:opacity-100"
       />
-    </a>
+    </Tag>
+  )
+}
+
+// El mail abre un menú para elegir dónde escribir (Gmail, Outlook...).
+function EmailLink() {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+  return (
+    <div className="relative">
+      <ContactLink as="button" type="button" icon={ChatsCircle} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        {site.email}
+      </ContactLink>
+      <EmailMenu open={open} onClose={close} dark subject={'Consulta desde la web'} />
+    </div>
   )
 }
 
@@ -63,9 +79,7 @@ export default function Footer() {
                 </li>
                 {site.email && (
                   <li>
-                    <ContactLink href={`mailto:${site.email}`} icon={ChatsCircle}>
-                      {site.email}
-                    </ContactLink>
+                    <EmailLink />
                   </li>
                 )}
                 {socials.map(({ key, label, icon }) => (

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ArrowRight, Storefront, WhatsappLogo } from './icons.jsx'
 import { site } from '../config/site.js'
 import { whatsappUrl } from '../lib/whatsapp.js'
+import EmailMenu from './EmailMenu.jsx'
 import Reveal from './Reveal.jsx'
 
 const EMPTY = { name: '', contact: '', message: '' }
@@ -48,6 +49,8 @@ function Field({ id, label, error, as: Tag = 'input', ...props }) {
 export default function ContactForm() {
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
+  const [emailOpen, setEmailOpen] = useState(false)
+  const closeEmail = useCallback(() => setEmailOpen(false), [])
 
   const update = (field) => (e) => {
     const next = { ...form, [field]: e.target.value }
@@ -67,11 +70,9 @@ export default function ContactForm() {
     window.open(whatsappUrl(buildMessage(form)), '_blank', 'noopener,noreferrer')
   }
 
+  // Elige dónde escribir (Gmail, Outlook...): un mailto solo no anda sin programa de correo.
   const sendEmail = () => {
-    if (!check()) return
-    const subject = encodeURIComponent(`Consulta desde la web - ${form.name.trim()}`)
-    const body = encodeURIComponent(buildMessage(form))
-    window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`
+    if (check()) setEmailOpen((o) => !o)
   }
 
   return (
@@ -145,9 +146,18 @@ export default function ContactForm() {
                   Enviar consulta
                 </button>
                 {site.email && (
-                  <button type="button" onClick={sendEmail} className="btn btn-outline flex-1">
-                    Enviar por mail
-                  </button>
+                  <div className="relative flex-1">
+                    <button type="button" onClick={sendEmail} aria-haspopup="menu" aria-expanded={emailOpen} className="btn btn-outline w-full">
+                      Enviar por mail
+                    </button>
+                    <EmailMenu
+                      open={emailOpen}
+                      onClose={closeEmail}
+                      align="right"
+                      subject={`Consulta desde la web - ${form.name.trim()}`}
+                      body={buildMessage(form)}
+                    />
+                  </div>
                 )}
               </div>
             </div>
