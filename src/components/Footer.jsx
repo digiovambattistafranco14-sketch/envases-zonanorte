@@ -38,7 +38,7 @@ function ContactLink({ href, icon: Icon, children, ...rest }) {
 function MapBlock({ className = '' }) {
   return (
     <div className={className}>
-      <h3 className="text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Nuestro local</h3>
+      <h3 className="text-[11px] font-bold tracking-[0.22em] text-gold-light uppercase">Depósito - Showroom</h3>
       <LocationMap className="mt-4" />
     </div>
   )
