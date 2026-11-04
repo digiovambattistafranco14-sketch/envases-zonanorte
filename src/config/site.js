@@ -8,7 +8,7 @@ export const site = {
     display: '+54 9 11 6844-9701',
   },
   // Mail de consultas. Dejar vacío para ocultarlo (las consultas igual llegan por WhatsApp).
-  email: '',
+  email: 'ventas@envaseszonanorte.online',
   // Local. El mapa (public/img/mapa-local.webp) se genera con scripts/build-map.mjs.
   location: {
     address: 'Chile 2120, Virreyes',
