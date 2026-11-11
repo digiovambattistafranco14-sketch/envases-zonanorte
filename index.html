@@ -55,9 +55,28 @@
         ]
       }
     </script>
+    <style>
+      .boot-help { display: none; }
+      @keyframes boot-show { to { visibility: visible; opacity: 1; } }
+      .boot-help { display: block; visibility: hidden; opacity: 0; animation: boot-show 0.4s 8s forwards; max-width: 420px; margin: 20vh auto 0; padding: 24px; text-align: center; font-family: system-ui, sans-serif; color: #111113; line-height: 1.5; }
+      .boot-help a { display: block; margin-top: 16px; padding: 14px; border-radius: 12px; background: #25d366; color: #fff; font-weight: 600; text-decoration: none; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Si la web no llega a cargar (navegador muy viejo), a los 8 segundos se ve este aviso. -->
+    <div id="root">
+      <div class="boot-help">
+        <strong>Envases &amp; Frascos Zona Norte</strong>
+        <p>Si la página no carga, actualizá el navegador o probá desde otro. También podés escribirnos:</p>
+        <a href="https://wa.me/5491168449701">Escribir por WhatsApp</a>
+      </div>
+    </div>
+    <noscript>
+      <div style="max-width: 420px; margin: 20vh auto 0; padding: 24px; text-align: center; font-family: system-ui, sans-serif">
+        Para ver la web hay que activar JavaScript en el navegador. También podés escribirnos por WhatsApp:
+        <a href="https://wa.me/5491168449701">+54 9 11 6844-9701</a>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

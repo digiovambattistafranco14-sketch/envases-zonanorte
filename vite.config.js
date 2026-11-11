@@ -17,4 +17,6 @@ const securityHeaders = Object.fromEntries(
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   preview: { headers: securityHeaders },
+  // Que funcione también en celulares y navegadores de hace unos años.
+  build: { target: ['es2020', 'chrome87', 'edge88', 'firefox78', 'safari14'] },
 })

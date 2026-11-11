@@ -70,7 +70,7 @@ export function CartProvider({ children }) {
       return [{
         ...item,
         product,
-        image: chosen.map(({ value }) => value.image).filter(Boolean).at(-1) || product.image,
+        image: chosen.map(({ value }) => value.image).filter(Boolean).pop() || product.image,
         name: detail ? `${product.name} (${detail})` : product.name,
         unitPrice: price,
         subtotal: price == null ? null : price * item.qty,
